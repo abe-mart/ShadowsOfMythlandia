@@ -1,5 +1,15 @@
 import streamlit as st
 
+# Hide menu in production
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
+# Logo
 st.image('Images/Shadows.png',use_column_width=True)
 
 # %% Persistent variables
