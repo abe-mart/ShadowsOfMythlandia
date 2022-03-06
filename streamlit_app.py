@@ -8,16 +8,10 @@ text = ""
 
 b1 = st.button('Attack!')
 
-b2 = st.button('Snow?')
-
 b3 = st.button('Ballons!')
 
 if b1:
   text = "Ow, what was that for?"
-  
-if b2:
-  text = 'Let it snow, let it snow'
-  st.snow()
   
 if b3:
   text = 'Hooray!'
