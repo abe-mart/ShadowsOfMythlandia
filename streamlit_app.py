@@ -11,4 +11,4 @@ b1 = st.button('Attack!')
 if b1:
   text = "Ow, what was that for?"
   
-st.text_area(value=text,height=10,disabled=True)
+st.text_area('',value=text,height=10,disabled=True)
