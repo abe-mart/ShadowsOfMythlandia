@@ -6,14 +6,18 @@ st.write('The up and coming best game of 2022. -Everyone Ever')
 
 text = ""
 
-b1 = st.button('Attack!')
+col1, col2 = st.columns(2)
 
-b3 = st.button('Ballons!')
+with col1:
+  b1 = st.button('Attack!')
+
+with col2:
+  b2 = st.button('Ballons!')
 
 if b1:
   text = "Ow, what was that for?"
   
-if b3:
+if b2:
   text = 'Hooray!'
   st.balloons()
   
