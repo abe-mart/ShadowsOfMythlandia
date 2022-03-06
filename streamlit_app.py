@@ -1,12 +1,12 @@
 import streamlit as st
 
-st.title('Shadows of Mythlandia: The Forge and the Fire')
+st.image('Images/Shadows.png')
 
 st.write('The up and coming best game of 2022. -Everyone Ever')
 
 text = ""
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([0.1,0.9])
 
 with col1:
   b1 = st.button('Attack!')
