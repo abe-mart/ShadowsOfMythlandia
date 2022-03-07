@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "In the Midst of Thick Trees"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_19_9", "m_description": "You push your way through dense brush. Clumps of twisted holly bushes thrive all around.   "}, "m_doors": [{"code": "Forest1_0_18_9", "dir": "w", "status": "open"}]}

@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Within the Trees"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_5_12", "m_description": "Birch trees spread their leaves above your head. Scattered piles of last winter's leaves drift over the ground.   "}, "m_doors": [{"code": "Forest1_0_4_12", "dir": "w", "status": "open"}]}

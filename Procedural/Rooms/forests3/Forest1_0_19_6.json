@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Rising Hillside"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_19_6", "m_description": "The landscape slopes slowly upwards here. Dense brush makes the passage slow.   "}, "m_doors": [{"code": "Forest1_0_18_6", "dir": "w", "status": "open"}]}

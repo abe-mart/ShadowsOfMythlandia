@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "In a Meadow"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_22_8", "m_description": "A cloud moves across the sun as you walk into an open area. Sandy brown dirt shifts underfoot.   "}, "m_doors": [{"code": "Forest1_0_21_9", "dir": "sw", "status": "open"}]}

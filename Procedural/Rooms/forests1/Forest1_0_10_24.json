@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "In a Clearing"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_10_24", "m_description": "A stretching field surrounds you. Sandy brown dirt shifts underfoot.   "}, "m_doors": [{"code": "Forest1_0_9_24", "dir": "w", "status": "open"}, {"code": "Forest1_0_11_23", "dir": "ne", "status": "open"}]}

@@ -1,0 +1,30 @@
+terrainTypes:
+    - forest
+    - clearing
+    - river
+    - mountain
+forest:
+    wooded_grove:
+        desc:
+            - A grove of beech trees rustles in the wind as you pass between their trunks.
+            - Twigs scratch against your cheek as you duck beneath a fallen tree.  Strands of ivy trail from the leaning trunk.
+        trees:
+            - beech trees
+            - 
+        verbs:
+            - rustle in the wind
+        adj:
+            - leafy
+        animals:
+            - A chipmunk eyes you from nearby
+            - A startled deer leaps at your approach, springing away through the trees.
+    thicket:
+    deep_woods:
+    thin_trees:
+clearing:
+    short_grass:
+    long_grass:
+    wild_flowers:
+    scattered_trees:
+river:
+mountain:

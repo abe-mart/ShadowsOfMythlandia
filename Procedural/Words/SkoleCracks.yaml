@@ -1,0 +1,98 @@
+terrainTypes:
+    - dry wash
+    - wide canyon
+    - narrow canyon
+ 
+dry wash:
+    simple: You stand in a dry wash.  Stunted grass grows from the sand.
+    name: (At the bottom of a,Standing in a,In a) (Wash,Gully,Ravine)
+    desc:
+        desc1:
+            - You (stand in,move through) a (dry,deep,sandy,shallow,rocky,gravel filled,sand filled) (wash,gully,ravine).
+            - (Low,High) banks of (rocky,sandy) earth (rise around you,slope upwards).
+            - (Hot,Dry) air (fills your lungs,bakes your skin).
+            - The sun beats down on your (face,back).
+            - Dust rises from your footsteps as you (walk,pick your way,make your way) down a (dry,deep,sandy,shallow,rocky,gravel filled,sand filled) (wash,gully,ravine).
+            - Sand shifts (beneath your feet,as a loose rock moves at your step).
+        desc2:
+            - Stunted (yellow,brown) grass (peeks through,grows between,struggles among) (piles of broken rock,rough gravel,sandy banks,cracked earth).
+            - (Small,large,rough) rocks are (scattered,clustered) along the (bottom,banks,ground)(, remants of some long dead stream). 
+            - Streaks of (dark,light,colored) sand (mix with,swirl through) the dusty orange brown of the dry streambed.
+            - (Patchy green grass,A grey-brown moss) speckles the ground.
+            - A small knee high overhang remains to your (right,left) where water once (carved,rippled along) the (dirt,earth,rock).
+            - (A few,One or two,Clumps of) (straggly,twisted,dry) (trees,shrubs,bushes) struggle for life in the (crusty ground,gravel).
+    surrounding: Nearby, the canyon opens into a dry wash.
+    
+wide canyon:
+    simple: Canyon walls rise some distance on either side.  A tumble of old branches lie strewn across the sand.
+    name: (Within,In) a (wide canyon,canyon)
+    desc:
+        desc1:
+            - Canyon walls rise some distance on either side.
+            - Sand fills the canyon floor from side to side.
+            - Towering canyon walls loom above you, silent echoes filling the space between them.
+            - The canyon turns here in a huge rippling bulge of rock and dust.
+            - Colorful sandstone walls rear from the rocky sand.
+        desc2:
+            - A tumble of old branches lie strewn across the sand.
+            - An enormous crack runs up the sandstone wall of the canyon.
+            - Far above, a single dry tree twists impossibly from a crack in the rock.
+            - (Rocky,rough,smooth) gravel sifts across the canyon bed.
+            - Runnels of sap drip from high branches, forming slow streamers to the ground below.
+            - Thick roots thrust from the ground at your feet.
+            - Clumps of twisted holly bushes thrive all around.
+    surrounding: Not far away, the brush and trees thicken as the forest grows deeper.
+    
+narrow canyon:
+    simple: You move through an open clearing.  Knee high grass waves in the breeze.
+    name: (In,Near) a (Clearing,Meadow)
+    desc:
+        desc1:
+            - You move through an open clearing.
+            - (A cloud moves across the sun,The sun shines down) as you walk into an open area.
+            - There are (only a few,a few,scattered) trees here.
+            - A wide clearing stretches before you.
+            - A stretching field surrounds you.
+        desc2:
+            - High above your head, a crusty line of white and brown marks the high water mark on the now bone dry rock.
+            - (Dark,Pale) (green,yellow) grass grows about your feet.
+            - Clumps of (grass,reeds) dot the ground.
+            - A few blades of (pale,green,yellow) grass push up through the earth.
+            - The ground is bare, with dry rocky soil.
+            - (Sandy,Rich) brown dirt shifts underfoot.
+            - Dust plumes around your feet as you trudge forward.
+            - (Clumps of,Stands of) (laurel,azalea,fern) bushes sprout nearby.
+            - A single (enormous,sickly,small) (laurel,azalea,fern) bush grows beside you.
+    surrounding: Nearby, the landscape opens into a grassy clearing.
+    
+generic_props:
+    - A cracked stone column lies fallen on the ground, overgrown with ivy. $a stone column
+    - A huge lightning struck oak tree once grew here.  Now it raises twisted, leafless branches to the sky. $a dead oak
+    - Beside you, a mossy boulder rests ponderously, sunk deep into the earth. $a mossy boulder
+    - Two squirrels perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $a stone bench
+    - A patch of brilliant red flowers sprout from the ground with petals like velvet teardrops. $a flower patch
+    - Three large stones are stacked atop one another, seemingly oblivious to gravity. $some piled stones
+    - A hollow stump clings tenaciously to the ground. $a hollow stump
+    - A ferret peeks at you from beneath a fallen log. $a fallen log
+    - A fallen tree slowly rots on the ground. Splinters of wood fall from the ruined trunk. $a fallen tree
+    - You come across the remains of long dead campfire.  Small bones litter the ashes. $an old campfire
+    - A pile of stones here seems to be home to a whole nest of mice.  They scatter as you approach. $a stone pile
+    - A signpost leans at an angle, aged wood bleached white.  There were words etched here once, but they are unreadable. $an ancient signpost
+    
+objectives:
+    - A tall ramshackle wooden structure rises above you.  Hooded figures move past high windows, and several horses are tethered nearby.  It seems you have stumbled upon a bandit tower. $A Bandit Tower
+    - Before you, whole trees have been woven togther to form a dense wall of branches.  You circle the wall until you find an opening.  Before the door, bones lie scattered around a smoking firepit.  This must be an ogre's lair. $An Ogre's Lair
+    - You hear cackling long before the tall circle of ancient stones comes into view.  Within the circle, figures work furiously around a blazing spellfire.  Do you dare to disturb a witches circle? $A Witchs' Circle
+    - A fetid stench fills the air, a dark musky scent.  Between two large boulders, a yawning tunnel opens into darkness.  Bones lie scattered around the opening, gnawed with huge teeth.  You have come across a werewolf's den. $A Werewolf's Den
+    
+sidequests:
+    - A rocky cave opens into the forest.  It stinks of troll.$a troll cave
+    - You pick your way carefully around the base of a long forgotten tower.  Ivy climbs up the side, and the door seems to be rusted shut.$an abandoned tower
+    - The ground softens beneath your feet, and you quickly find yourself knee deep in swamp water.$a murky swamp
+    - Before you, the silty ground has fallen away into a large sinkhole.  A fallen tree leans out of the hole, providing a way down.$a deep sinkhole
+    - Clanging fills the air, and you soon find a tunnel entrance carved into the ground.  Crude railtracks lead inside, and you hear the sound of shrill voices that could only be goblins.$a goblin mine
+    - Nestled under a looming tree you spy an old wooden hut.  Strange runes are marked about the door, and pale green smoke drifts from the chimney.$a witch's hut
+    - A strange bittersweet scent fills the air.  Looking around, you trace the scent to a peculiar tree with pale white bark and blood-red leaves.  The scent emenates from the tree's fruit, golden orbs that seem to glow with an inner light.$an enchanted tree
+    - You nearly trip over the skeleton of a man half buried under a drift of leaves.  A chain leads from his ankle to a hole in a hollow tree.  A quick search reveals that the poor wretch was chained to a large wooden chest inside the tree, but who he was you'll never know.$a treasure chest
+    - A melodious voice breaks the stillness of the forest, singing a jovial tune.  Soon a strolling player strides into sight, plucking a lute.$a singing bard
+    - A few scattered stones lead to an overgrown path, and soon a ruin is before you.  The remnants of a castle crumble into the dust. Fallen battlements and faded banners call back memories of a grander time.$a ruined castle

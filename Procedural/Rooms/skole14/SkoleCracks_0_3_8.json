@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Standing in a Gully"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "SkoleCracks_0_3_8", "m_description": "Dust rises from your footsteps as you walk down a sandy ravine. Stunted yellow grass peeks through cracked earth. "}, "m_doors": [{"code": "SkoleCracks_0_2_8", "dir": "w", "status": "open"}]}

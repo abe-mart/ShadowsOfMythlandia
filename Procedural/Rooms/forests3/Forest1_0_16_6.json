@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Within the Forest"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_16_6", "m_description": "Slender trees spread their leaves above your head. A few clumps of dark green grass grow between the tree roots.   "}, "m_doors": [{"code": "Forest1_0_15_6", "dir": "w", "status": "open"}]}

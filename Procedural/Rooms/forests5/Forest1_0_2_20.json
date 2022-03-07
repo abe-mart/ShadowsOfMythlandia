@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Close By the Water"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_2_20", "m_description": "A stream bubbles nearby. Large stones lie along the muddy shore.   "}, "m_doors": [{"code": "Forest1_0_2_21", "dir": "s", "status": "open"}, {"code": "Forest1_0_3_19", "dir": "ne", "status": "open"}]}

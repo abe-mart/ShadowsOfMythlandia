@@ -1,0 +1,158 @@
+terrainTypes:
+    - water
+    - clearing
+    - forest
+    - dense forest
+    - hillside
+    - hill
+ 
+forest:
+    simple: A forest grows around you.  Sunlight filters through the leaves.
+    name: (Surrounded by,Within the) (Forest,Trees)
+    desc:
+        desc1:
+            - A forest grows around you.
+            - (Tall,Slender,Birch,Maple) trees spread their leaves above your head.
+            - Around you, (thick,slender,stout) trees rise high.
+            - The forest surrounds you.
+            - The (smell of greenery is heavy,scent of earth fills your nose) as you move through the forest.
+            - You step through the forest, (dead twigs cracking,leaves rustling) quietly underfoot.
+            - Sparse trees grow (here and there,in small groves).
+        desc2:
+            - Sunlight filters through the leaves.
+            - (Scattered piles,Thick clumps) of last winter's leaves drift over the ground.
+            - (Drifts,Piles) of leaves lie thick around the trunks.
+            - (Patchy green grass,A grey-brown moss) speckles the ground.
+            - A few (blades,patches,clumps) of (pale green,dark green,yellow) grass grow between the tree roots.
+            - (Deep green,Pale green,Stiff brown,Soft,Dry) grass carpets the forest floor.
+            - Scattered (bushes huddle,brush huddles) against the tree trunks.
+    surrounding: Trees and brush mark the edge of the nearby forest.
+    
+dense forest:
+    simple: Dense forest presses in around you.  A thick canopy of leaves dims the sky above.
+    name: (In the Midst of,Surrounded By,Within) (Dense,Deep,Thick,Overgrown) (Forest,Trees)
+    desc:
+        desc1:
+            - Dense forest presses in around you.
+            - The forest grows thick around you.
+            - You push your way through dense brush.
+            - Trees grow closely together, making the way forward difficult.
+            - Huge sapwood trees wind gnarled roots across the ground.
+            - Great leafy branches press together, filling the space between trees.
+            - You move through a forest of huge leafy ferns.
+        desc2:
+            - A thick canopy of leaves dims the sky above.
+            - Foliage scratches against your arms.
+            - The air seems stuffy.
+            - Thick underbrush clutters the forest floor.
+            - Runnels of sap drip from high branches, forming slow streamers to the ground below.
+            - Thick roots thrust from the ground at your feet.
+            - Clumps of twisted holly bushes thrive all around.
+    surrounding: Not far away, the brush and trees thicken as the forest grows deeper.
+    
+clearing:
+    simple: You move through an open clearing.  Knee high grass waves in the breeze.
+    name: (In,Near) a (Clearing,Meadow)
+    desc:
+        desc1:
+            - You move through an open clearing.
+            - (A cloud moves across the sun,The sun shines down) as you walk into an open area.
+            - There are (only a few,a few,scattered) trees here.
+            - A wide clearing stretches before you.
+            - A stretching field surrounds you.
+        desc2:
+            - (Knee high,Waist high,Short) grass (waves,ripples,quivers) in (the breeze,a light wind).
+            - (Dark,Pale) (green,yellow) grass grows about your feet.
+            - Clumps of (grass,reeds) dot the ground.
+            - A few blades of (pale,green,yellow) grass push up through the earth.
+            - The ground is bare, with dry rocky soil.
+            - (Sandy,Rich) brown dirt shifts underfoot.
+            - Dust plumes around your feet as you trudge forward.
+            - (Clumps of,Stands of) (laurel,azalea,fern) bushes sprout nearby.
+            - A single (enormous,sickly,small) (laurel,azalea,fern) bush grows beside you.
+    surrounding: Nearby, the landscape opens into a grassy clearing.
+    
+water:
+    simple: A stream rushes past your feet.  Reeds grow along its edge.
+    name: (Close By,Near,By,Beside,Approaching) (the Water,a Stream)
+    desc:
+        desc1:
+            - A stream (rushes,bubbles) (past your feet,nearby,ahead of you).
+            - (Rough,Fine,Smooth,Crunchy) (gravel,sand) (lies along,marks) the (edge,bank) of a (rushing,winding,meandering,small,clear,noisy) (stream,brook,creek).
+            - Gravel (crunches,slides) beneath your feet as you walk beside a (small,meandering,rushing) (stream,brook,creek).
+            - (Velvety,Damp,Thick,Green) moss covers stones leading to a (small,meandering,rushing) (stream,brook,creek).
+            - The (noise,sound) of (trickling,burbling,splashing) water (fills the air,meets your ears) as you (walk towards,approach,near) a (stream,brook,creek).
+        desc2:
+            - (Giant,Green,Yellow,Brown) reeds grow along its edge.
+            - (Clumps,Patches,Clusters,Stands) of (scattered,green,yellow,brown,verdant,sickly,twisted,thin,stout) (reeds,rushes,plants) (grow,sprout,twine) along the (edge,bank) of the water.
+            - (Rough,Small,Large) stones lie along the (muddy,overgrown) shore.
+            - Sunlight (dimly gleams,glints,brightly gleams) from the (rippling,tranquil) water.
+            - (Rocks,Boulders) break the surface of the water, sending (plumes of foam,sprays) (rushing downstream,into the air).
+            - A (pile of branches,large log) lies across the stream, holding the water back into a pooling whirlpool.
+    surrounding: You hear water flowing nearby.
+    
+hillside:
+    simple: The landscape slopes steeply upwards here.  Dense brush makes the passage difficult.
+    name: (Climbing a Hill,On a Hillside,Rising Hillside)
+    desc:
+        desc1:
+            - The landscape slopes (gently,steeply,quickly,slowly) upwards here.
+            - A hill (gently,quickly,sharply) rises.
+            - Terraced steps lead up a (gentle,tall) hill.
+        desc2:
+            - Dense (foliage,brush) makes (walking,the passage) (difficult,slow).
+            - (Small boulders,Small stones,Large Boulders) (litter,carpet,speckle) the hillside.
+            - (Straggly,Scattered,Stands of) (oak,beech,maple) (saplings,trees) (march,spatter,spread) (up the hill,across the hillside).
+            - A crumbling boulder sits ponderously in a mound of earth where it has rolled from higher up the hill.
+            - A solitary (beech,maple,oak,sapwood) tree stands like a sentinel.
+            - The hillside is broken by small sloughs and cliffs, and passage is treacherous.
+    surrounding: In the distance, a hill begins to slope upwards.
+    
+hill:
+    simple: You stand atop a rocky hill.  The landscape spreads below you.
+    name: (Above the forest,On top of a Hill,Atop a knoll)
+    desc:
+        desc1:
+            - You stand atop a (rocky,forested,grassy) hill.
+            - (Wind,A breeze) (blows in your face,ruffles your hair,gusts) as you (crest the hill,reach the summit of the hill,stand atop a hill).
+            - The view from the top of the hill is (incredible,underwhelming,decent).
+        desc2:
+            - The landscape spreads below you.
+            - (Dark,Creamy,Smooth,Hard,Rough) (stone,rock) (covers,rings) (the ground,the steep slopes of the hill,the hilltop).
+            - A (huge boulder, stone cairn, pile of stones, ring of broken stones, ruined foundation) marks the (summit,top) of the (low,high) hill.
+            - A (stand,grove,cluster) of (tall,sturdy,slender,young,ancient,stout,crooked,sapling) (beech,maple,oak) trees (strech,wave,rustle) (in the wind,nearby,just off the hilltop). 
+            - A solitary sapwoood tree stands at the top of the hill, mounds of dried sap surrounding its base.
+            - Thick grass blankets the top of the hill.
+    surrounding: A hilltop looms nearby.
+    
+generic_props:
+    - A cracked stone column lies fallen on the ground, overgrown with ivy. $a stone column
+    - A huge lightning struck oak tree once grew here.  Now it raises twisted, leafless branches to the sky. $a dead oak
+    - Beside you, a mossy boulder rests ponderously, sunk deep into the earth. $a mossy boulder
+    - Two squirrels perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $a stone bench
+    - A patch of brilliant red flowers sprout from the ground with petals like velvet teardrops. $a flower patch
+    - Three large stones are stacked atop one another, seemingly oblivious to gravity. $some piled stones
+    - A hollow stump clings tenaciously to the ground. $a hollow stump
+    - A ferret peeks at you from beneath a fallen log. $a fallen log
+    - A fallen tree slowly rots on the ground. Splinters of wood fall from the ruined trunk. $a fallen tree
+    - You come across the remains of long dead campfire.  Small bones litter the ashes. $an old campfire
+    - A pile of stones here seems to be home to a whole nest of mice.  They scatter as you approach. $a stone pile
+    - A signpost leans at an angle, aged wood bleached white.  There were words etched here once, but they are unreadable. $an ancient signpost
+    
+objectives:
+    - A tall ramshackle wooden structure rises above you.  Hooded figures move past high windows, and several horses are tethered nearby.  It seems you have stumbled upon a bandit tower. $A Bandit Tower
+    - Before you, whole trees have been woven togther to form a dense wall of branches.  You circle the wall until you find an opening.  Before the door, bones lie scattered around a smoking firepit.  This must be an ogre's lair. $An Ogre's Lair
+    - You hear cackling long before the tall circle of ancient stones comes into view.  Within the circle, figures work furiously around a blazing spellfire.  Do you dare to disturb a witches circle? $A Witchs' Circle
+    - A fetid stench fills the air, a dark musky scent.  Between two large boulders, a yawning tunnel opens into darkness.  Bones lie scattered around the opening, gnawed with huge teeth.  You have come across a werewolf's den. $A Werewolf's Den
+    
+sidequests:
+    - A rocky cave opens into the forest.  It stinks of troll.$a troll cave
+    - You pick your way carefully around the base of a long forgotten tower.  Ivy climbs up the side, and the door seems to be rusted shut.$an abandoned tower
+    - The ground softens beneath your feet, and you quickly find yourself knee deep in swamp water.$a murky swamp
+    - Before you, the silty ground has fallen away into a large sinkhole.  A fallen tree leans out of the hole, providing a way down.$a deep sinkhole
+    - Clanging fills the air, and you soon find a tunnel entrance carved into the ground.  Crude railtracks lead inside, and you hear the sound of shrill voices that could only be goblins.$a goblin mine
+    - Nestled under a looming tree you spy an old wooden hut.  Strange runes are marked about the door, and pale green smoke drifts from the chimney.$a witch's hut
+    - A strange bittersweet scent fills the air.  Looking around, you trace the scent to a peculiar tree with pale white bark and blood-red leaves.  The scent emenates from the tree's fruit, golden orbs that seem to glow with an inner light.$an enchanted tree
+    - You nearly trip over the skeleton of a man half buried under a drift of leaves.  A chain leads from his ankle to a hole in a hollow tree.  A quick search reveals that the poor wretch was chained to a large wooden chest inside the tree, but who he was you'll never know.$a treasure chest
+    - A melodious voice breaks the stillness of the forest, singing a jovial tune.  Soon a strolling player strides into sight, plucking a lute.$a singing bard
+    - A few scattered stones lead to an overgrown path, and soon a ruin is before you.  The remnants of a castle crumble into the dust. Fallen battlements and faded banners call back memories of a grander time.$a ruined castle

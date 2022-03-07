@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Above the forest"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_7_23", "m_description": "The view from the top of the hill is underwhelming. A stand of sturdy beech trees rustle nearby.   "}, "m_doors": [{"code": "Forest1_0_6_24", "dir": "sw", "status": "open"}]}

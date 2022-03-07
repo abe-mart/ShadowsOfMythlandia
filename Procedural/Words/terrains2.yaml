@@ -1,0 +1,547 @@
+terrainTypes:
+    - forest
+    - clearing
+    - water
+    - mountain
+forest:
+    simple: A forest grows around you.  Sunlight filters through the leaves.
+    name: Surrounded by Forest
+    types:
+        - ground
+        - plants
+    ground:
+        types:
+            - leaves
+            - grass
+        leaves:
+            adj:
+                - dry
+                - crunchy
+                - soggy
+                - brown
+                - yellow
+                - freshly fallen
+                - rotting
+                - soft
+            verbs:
+                singular:
+                    - drifts over
+                    - covers
+                    - scatters across
+                plural:
+                    - drift over
+                    - cover
+                    - scatter across
+            group:
+                singular:
+                    - A drift of
+                plural:
+                    - Scattered piles of 
+                    - Drifts of
+                    - ""
+        grass:
+            adj:
+                - patchy
+                - pale brown
+                - pale green
+                - deep green
+            verbs:
+                singular:
+                    - grows on
+                    - grows about
+                    - carpets
+                plural:
+                    - grow on
+                    - grow about
+                    - carpet
+            group:
+                singular:
+                    - A patch of
+                    - A spring of 
+                    - A field of
+                plural:
+                    - Patches of
+                    - A few blades of
+                    - Fields of
+                    - ""
+        finishers:
+            singular:
+                - the ground.
+                - the forest floor.
+                - under your feet.
+                - the ground at your feet.
+                - the surrounding area.
+                - your surroundings.
+            plural:
+                - the ground.
+                - the forest floor.
+                - under your feet.
+                - the ground at your feet.
+                - the surrounding area.
+                - your surroundings.
+
+    plants:
+        types:
+            - trees
+            - bushes
+        trees:
+            types:
+                - beech
+                - maple
+                - oak
+            adj:
+                - tall
+                - sturdy
+                - slender
+                - young
+                - ancient
+                - stout
+                - crooked
+                - sapling
+            verbs:
+                singular:
+                    - streches
+                    - stands
+                    - waves
+                    - rustles
+                plural:
+                    - stretch
+                    - stand
+                    - wave
+                    - rustle
+            group:
+                singular:
+                    - a grove of
+                    - a solitary
+                    - a single
+                    - stretches of
+                plural:
+                    - stands of
+                    - groves of
+                    - ""
+        bushes:
+            types:
+                - fern
+                - azalea
+                - holly
+                - laurel
+            adj:
+                - thick
+                - dense
+                - sparse
+                - green
+                - verdant
+                - sickly
+                - vibrant
+                - twisted
+                - thin
+                - stout
+            verbs:
+                singular:
+                    - grows
+                    - sprouts
+                    - flourishes
+                    - twines
+                    - thrives
+                plural:
+                    - grow
+                    - sprout
+                    - twine
+                    - flourish
+                    - thrive
+            group:
+                singular:
+                    - a 
+                    - a clump of
+                    - a stand of 
+                    - a single
+                    - a lonely 
+                    - a cluster of
+                plural:
+                    - 
+                    - clumps of
+                    - stands of
+                    - clusters of
+                    - scattered 
+                    - widespread
+        finishers:
+            singular:
+                - beside you.
+                - to the side of the path.
+                - nearby.
+                - close at hand.
+                - someway off.
+            plural:
+                - about you.
+                - to the side of the path.
+                - all around.
+                - nearby.
+                - close at hand.
+                - all about.
+clearing:
+    simple: You move through an open clearing.  Knee high grass waves in the breeze.
+    name: In a Clearing
+    types:
+        - ground
+        - plants
+    ground:
+        types:
+            - grass
+            - dirt
+        grass:
+            adj:
+                - patchy
+                - pale brown
+                - pale green
+                - deep green
+            verbs:
+                singular:
+                    - grows on
+                    - grows about
+                    - carpets
+                plural:
+                    - grow on
+                    - grow about
+                    - carpet
+            group:
+                singular:
+                    - A patch of
+                    - A spring of 
+                    - A field of
+                plural:
+                    - Patches of
+                    - A few blades of
+                    - Fields of
+                    - ""
+        dirt:
+            adj:
+                - dark brown
+                - sandy
+            verbs:
+                singular:
+                    - fans out from beneath your feet
+                    - covers
+                plural:
+                    - fan out
+                    - cover
+            group:
+                singular:
+                    - a layer of
+                    - a plume of
+                plural:
+                    - layers of
+                    - plumes of
+        finishers:
+            singular:
+                - beside you.
+                - over a wide clearing.
+                - nearby.
+                - across a stretching field.
+                - someway off.
+            plural:
+                - about you.
+                - over a wide clearing
+                - all around.
+                - nearby.
+                - across a stretching field.
+                - all about.
+    plants:
+        types:
+            - brush
+            - reeds
+        brush:
+            types:
+                - fern
+                - azalea
+                - holly
+                - laurel
+            adj:
+                - thick
+                - dense
+                - sparse
+                - green
+                - verdant
+                - sickly
+                - vibrant
+                - twisted
+                - thin
+                - stout
+            verbs:
+                singular:
+                    - grows
+                    - sprouts
+                    - flourishes
+                    - twines
+                    - thrives
+                plural:
+                    - grow
+                    - sprout
+                    - twine
+                    - flourish
+                    - thrive
+            group:
+                singular:
+                    - a 
+                    - a clump of
+                    - a stand of 
+                    - a single
+                    - a lonely 
+                    - a cluster of
+                plural:
+                    - 
+                    - clumps of
+                    - stands of
+                    - clusters of
+                    - scattered 
+                    - widespread
+        reeds:
+            types:
+                - giant
+                - thatching
+            adj:
+                - green
+                - yellow
+                - brown
+                - green
+                - verdant
+                - sickly
+                - vibrant
+                - twisted
+                - thin
+                - stout
+            verbs:
+                singular:
+                    - grows
+                    - sprouts
+                    - flourishes
+                    - twines
+                    - thrives
+                plural:
+                    - grow
+                    - sprout
+                    - twine
+                    - flourish
+                    - thrive
+            group:
+                singular:
+                    - a 
+                    - a clump of
+                    - a stand of 
+                    - a single
+                    - a lonely 
+                    - a cluster of
+                plural:
+                    - 
+                    - clumps of
+                    - stands of
+                    - clusters of
+                    - scattered 
+                    - widespread
+        finishers:
+            singular:
+                - beside you.
+                - over a wide clearing.
+                - nearby.
+                - across a stretching field.
+                - someway off.
+            plural:
+                - about you.
+                - over a wide clearing
+                - all around.
+                - nearby.
+                - across a stretching field.
+                - all about.
+water:
+    simple: A stream rushes past your feet.  Reeds grow along its edge.
+    name: Near the Water
+    types:
+        - ground
+        - plants
+    ground:
+        types:
+            - gravel
+        gravel:
+            adj:
+                - rough
+                - sandy
+                - rocky
+                - smooth
+            verbs:
+                singular:
+                    - crunches
+                plural:
+                    - crunch
+            group:
+                singular:
+                    - a thin layer of
+                    - patches of
+                plural:
+                    - ""
+        finishers:
+            singular:
+                - beneath your feet.
+                - beside the river.
+                - on the river bank.
+            plural:
+                - beneath your feet.
+                - beside the river.
+                - on the river bank
+    plants:
+        types:
+            - reeds
+        reeds:
+            types:
+                - giant
+                - thatching
+            adj:
+                - green
+                - yellow
+                - brown
+                - green
+                - verdant
+                - sickly
+                - vibrant
+                - twisted
+                - thin
+                - stout
+            verbs:
+                singular:
+                    - grows
+                    - sprouts
+                    - flourishes
+                    - twines
+                    - thrives
+                plural:
+                    - grow
+                    - sprout
+                    - twine
+                    - flourish
+                    - thrive
+            group:
+                singular:
+                    - a 
+                    - a clump of
+                    - a stand of 
+                    - a single
+                    - a lonely 
+                    - a cluster of
+                plural:
+                    - 
+                    - clumps of
+                    - stands of
+                    - clusters of
+                    - scattered 
+                    - widespread
+        finishers:
+            singular:
+                - out of the riverbank.
+                - alongside a stream of water.
+            plural:
+                - out of the riverbank.
+                - alongside a stream of water.
+mountain:
+    simple: You stand atop a rocky hill.  The landscape spreads below you.
+    name: On top of a Hill
+    types:
+        - ground
+        - plants
+    ground:
+        types:
+            - rock
+        rock:
+            adj:
+                - dark
+                - creamy
+                - smooth
+                - hard
+                - rough
+            verbs:
+                singular:
+                    - rings
+                plural:
+                    - ring
+            group:
+                singular:
+                    - a patch
+                plural:
+                    - mountains of
+                    - patches of 
+            finishers:
+            - the ground.
+            - the steep slopes of the mountain.
+            - under your feet.
+            - the ground at your feet.
+    plants:
+        types:
+            - trees
+        trees:
+            types:
+                - beech
+                - maple
+                - oak
+            adj:
+                - tall
+                - sturdy
+                - slender
+                - young
+                - ancient
+                - stout
+                - crooked
+                - sapling
+            verbs:
+                singular:
+                    - streches
+                    - stands
+                    - waves
+                    - rustles
+                plural:
+                    - stretch
+                    - stand
+                    - wave
+                    - rustle
+            group:
+                singular:
+                    - a grove of
+                    - a solitary
+                    - a single
+                    - stretches of
+                plural:
+                    - stands of
+                    - groves of
+                    - ""
+        finishers:
+            singular:
+                - from the hard rock of the mountain.
+            plural:
+                - from the hard rock of the mountain.
+generic_props:
+    - A cracked stone column lies fallen on the ground, overgrown with ivy. $ a stone column
+    - A huge lightning struck oak tree once grew here.  Now it raises twisted, leafless branches to the sky. $ a dead oak
+    - Beside you, a mossy boulder rests ponderously, sunk deep into the earth. $ a mossy boulder
+    - Two squirrels perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $ a stone bench
+    - A patch of brilliant red flowers sprout from the ground with petals like velvet teardrops. $ a flower patch
+    - Three large stones are stacked atop one another, seemingly oblivious to gravity. $ some piled stones
+    - A hollow stump clings tenaciously to the ground. $ a hollow stump
+    - A ferret peeks at you from beneath a fallen log. $ a fallen log
+    - A fallen tree slowly rots on the ground. Splinters of wood fall from the ruined trunk. $ a fallen tree
+    - You come across the remains of long dead campfire.  Small bones litter the ashes. $ an old campfire
+    - A pile of stones here seems to be home to a whole nest of mice.  They scatter as you approach. $ a stone pile
+    - A signpost leans at an angle, aged wood bleached white.  There were words etched here once, but they are unreadable. $ an ancient signpost
+    
+objectives:
+    - a bandit tower
+    - an ogre lair
+    - a witches circle
+    - a werewolf's den
+    
+sidequests:
+    - a troll cave
+    - an abandoned tower
+    - a murky swamp
+    - a deep sinkhole
+    - a goblin mine
+    - a witch's hut
+    - an enchanted tree
+    - a treasure chest
+    - a singing bard
+    - a ruined castle

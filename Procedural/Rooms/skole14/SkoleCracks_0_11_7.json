@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "In a canyon"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "SkoleCracks_0_11_7", "m_description": "Towering canyon walls loom above you, silent echoes filling the space between them. Rocky gravel sifts across the canyon bed. "}, "m_doors": [{"code": "SkoleCracks_0_10_7", "dir": "w", "status": "open"}]}

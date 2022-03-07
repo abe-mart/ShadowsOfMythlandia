@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Surrounded by Forest"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_21_21", "m_description": "A forest grows around you. Sunlight filters through the leaves.   A hilltop looms nearby."}, "m_doors": [{"code": "Forest1_0_20_21", "dir": "w", "status": "open"}]}

@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Climbing a Hill"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Forest1_0_7_18", "m_description": "A hill sharply rises. Small boulders litter the hillside.   "}, "m_doors": [{"code": "Forest1_0_6_19", "dir": "sw", "status": "open"}, {"code": "Forest1_0_7_17", "dir": "n", "status": "open"}]}
