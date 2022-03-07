@@ -13,7 +13,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.image('Images/Shadows.png',use_column_width=True)
 
 # %% Persistent variables go here
-    
+if 'FirstRun' not in st.session_state:
+    st.session_state['FirstRun'] = True
 
 # %% Save a spot for the main game text display
 text_placeholder = st.empty() # Fill this in after processing buttons
@@ -41,7 +42,12 @@ if defend:
 if ballon:
     st.balloons()
     text = "Hooray!"
+if st.session_state['FirstRun']:
+    text = 'The door of the forbidden mountain looms before you.'
 
 # %% Update main display
 with text_placeholder:
     st.text_area('',value=text,height=10,disabled=True)
+    
+# %% Additional logic
+st.session_state['FirstRun'] = False
