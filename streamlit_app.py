@@ -12,33 +12,36 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Logo
 st.image('Images/Shadows.png',use_column_width=True)
 
-# %% Persistent variables
+# %% Persistent variables go here
+    
 
-# Initialize text for text box
-if 'text' not in st.session_state:
-    st.session_state['text'] = ""
-    
-# %% Process player inputs
-    
-def process_inputs():
-    text = ""
-    if st.session_state.attack:
-        text = "Ow, what was that for?"
-    if st.session_state.ballon:
-        st.balloons()
-        text = "Hooray!"
-    st.session_state['text'] = text
-    
-# %% Main text area for game display
-st.text_area('',value=st.session_state['text'],height=10,disabled=True)
+# %% Save a spot for the main game text display
+text_placeholder = st.empty() # Fill this in after processing buttons
 
 # %% Buttons
-col1, col2 = st.columns([0.1,0.9])
+col1, col2, col3 = st.columns([0.11,0.12,0.87])
 
 with col1:
-  st.button('Attack!',key='attack',on_click=process_inputs)
-
+  attack = st.button('Attack!')
+  
 with col2:
-  st.button('Ballons!',key='ballon',on_click=process_inputs)
+  defend = st.button('Defend!')
+
+with col3:
+  ballon = st.button('Ballons!')
       
 st.write('The up and coming best game of 2022. -Everyone Ever')
+
+# %% Process player inputs
+text = ""
+if attack:
+    text = "Ow, what was that for?"
+if defend:
+    text = "Blocked?"
+if ballon:
+    st.balloons()
+    text = "Hooray!"
+
+# %% Update main display
+with text_placeholder:
+    st.text_area('',value=text,height=10,disabled=True)
