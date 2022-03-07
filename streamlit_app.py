@@ -91,7 +91,7 @@ for i, d in enumerate(dirlist):
         
 # %% Update main display
 with text_placeholder:
-    st.text_area('',value=text,height=10,disabled=True)
+    st.text_area('',value=text,height=150,disabled=True)
     
 # %% Additional logic
 st.session_state['FirstRun'] = False
