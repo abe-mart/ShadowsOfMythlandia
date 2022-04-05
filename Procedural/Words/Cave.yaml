@@ -114,27 +114,27 @@ dwarf:
     desc:
         desc1:
             - You stand within a dwarven (fortress,palace,workshop).
-            - (Wind,A breeze) (blows in your face,ruffles your hair,gusts) as you (crest the hill,reach the summit of the hill,stand atop a hill).
-            - The view from the top of the hill is (incredible,underwhelming,decent).
+            - The fire of a thousand forges (burns,blazes) before you.
+            - Dwarves mill around you, pushing past the stranger in their midst.
         desc2:
-            - The landscape spreads below you.
-            - (Dark,Creamy,Smooth,Hard,Rough) (stone,rock) (covers,rings) (the ground,the steep slopes of the hill,the hilltop).
-            - A (huge boulder, stone cairn, pile of stones, ring of broken stones, ruined foundation) marks the (summit,top) of the (low,high) hill.
-            - A (stand,grove,cluster) of (tall,sturdy,slender,young,ancient,stout,crooked,sapling) (beech,maple,oak) trees (strech,wave,rustle) (in the wind,nearby,just off the hilltop). 
-            - A solitary sapwoood tree stands at the top of the hill, mounds of dried sap surrounding its base.
-            - Thick grass blankets the top of the hill.
-    surrounding: A hilltop looms nearby.
+            - Rows of (granite,marble,iron,copper,silver,crystal) (columns,pillars,arches) stretch in all directions.
+            - (Dark,Creamy,Smooth,Hard,Rough) (stone,rock) (covers,rings) (the ground,the stairs,the fountains).
+            - A (huge carved boulder,stone cairn,marble throne,ring of broken stones,golden statue) marks the center of the chamber.
+            - (Cunningly,Deftly,Skilfully) (carved,fashioned,crafted) (silver,crystal,golden) (trees,fountains,statues,smoothie machines) draw your eye. 
+            - A solitary sapwoood tree stands within, lit by gems of captured sunlight from far above.
+            - Marble flagstones echo beneath your feet.
+    surrounding: The bustle of a dwarven city echoes nearby.
     
 generic_props:
-    - A cracked stone column lies fallen on the ground, overgrown with ivy. $a stone column
-    - A huge lightning struck oak tree once grew here.  Now it raises twisted, leafless branches to the sky. $a dead oak
+    - A cracked stone column lies fallen on the ground, overgrown with lichen. $a stone column
+    - A huge stalagmite once grew here.  Now it raises shattered stumps to the darkness. $a broken stalagmite
     - Beside you, a mossy boulder rests ponderously, sunk deep into the earth. $a mossy boulder
-    - Two squirrels perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $a stone bench
-    - A patch of brilliant red flowers sprout from the ground with petals like velvet teardrops. $a flower patch
+    - Two rats perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $a stone bench
+    - A patch of brilliant red gems sprout from the ground shaped into petals like velvet teardrops. $a gem growth
     - Three large stones are stacked atop one another, seemingly oblivious to gravity. $some piled stones
-    - A hollow stump clings tenaciously to the ground. $a hollow stump
-    - A ferret peeks at you from beneath a fallen log. $a fallen log
-    - A fallen tree slowly rots on the ground. Splinters of wood fall from the ruined trunk. $a fallen tree
+    - A hollow root clings tenaciously to the ground. $a hollow root
+    - A snake peeks at you from beneath a fallen timber. $a fallen beam
+    - A fallen column crumbles to dust on the ground. Splinters of stone fall from the ruined sides. $a fallen column
     - You come across the remains of long dead campfire.  Small bones litter the ashes. $an old campfire
     - A pile of stones here seems to be home to a whole nest of mice.  They scatter as you approach. $a stone pile
     - A signpost leans at an angle, aged wood bleached white.  There were words etched here once, but they are unreadable. $an ancient signpost
