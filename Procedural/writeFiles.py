@@ -29,7 +29,7 @@ def write_files(w,connections,seed):
         
     # Write out room data in Derek's json format
     
-    folder = r'C:\Users\oacom\Documents\Python Scripts\mudworlds\Procedural\Rooms/skole'+str(seed)+'/'
+    folder = r'./Rooms/cave'+str(seed)+'/'
     
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)

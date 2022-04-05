@@ -10,7 +10,7 @@ import yaml
 import random
 import matplotlib.pyplot as plt
 
-map_name = 'SkoleCracks'
+map_name = 'Cave'
 
 # Load description file
 with open('./Words/'+map_name+'.yaml') as f:

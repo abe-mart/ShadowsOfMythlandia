@@ -1,0 +1,1 @@
+{"IdentificationComponent": {"m_name": "Climbing a Hill"}, "InventoryComponent": {}, "LocalMessageComponent": {}, "RoomComponent": {"m_code": "Cave_0_16_7", "m_description": "A hill sharply rises. A solitary sapwood tree stands like a sentinel. "}, "m_doors": [{"code": "Cave_0_15_7", "dir": "w", "status": "open"}, {"code": "Cave_0_17_8", "dir": "se", "status": "open"}]}

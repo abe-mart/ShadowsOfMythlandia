@@ -21,7 +21,7 @@ st.image('Images/Shadows.png',use_column_width=True)
 #     st.session_state['FirstRun'] = True
     
 if 'folder' not in st.session_state:
-    st.session_state['folder'] = random.choice(glob.glob("Procedural/Rooms/Cave*"))
+    st.session_state['folder'] = random.choice(glob.glob("Procedural/Rooms/cave*"))
 folder = st.session_state['folder']
     
 if 'room' not in st.session_state:

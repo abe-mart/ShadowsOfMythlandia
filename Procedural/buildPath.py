@@ -14,7 +14,7 @@ def shortest_path(w):
     POIs = POIs.append(w.loc[w['has_entrance']==True])
     
     # Create matrix of locations
-    locations = POIs['location'].as_matrix()
+    locations = POIs['location'].to_numpy()
     X = np.zeros([len(POIs),2])
     for ind, location in enumerate(locations):
         X[ind,0] = location[0]
