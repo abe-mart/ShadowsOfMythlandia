@@ -1,0 +1,158 @@
+terrainTypes:
+    - water
+    - cave
+    - deep cave
+    - forest
+    - near dwarf
+    - dwarf
+ 
+forest:
+    simple: A strange forest of stone grows around you.  A phosphoresent light gleams through the leaves.
+    name: (Surrounded by,Within the) (Stone Forest,Petrified Trees)
+    desc:
+        desc1:
+            - (A strange,An unworldly, A looming) forest of stone grows around you.
+            - (Tall,Slender,Stout) columns of petrified trees spread their leaves above your head.
+            - Around you, (thick,slender,stout) trees of stone rise high.
+            - The stone forest surrounds you.
+            - The (smell of rust is heavy,scent of rock hard earth fills your nose) as you move through the stone forest.
+            - You step through the (ancient,long forgotten,frozen) forest, (stone twigs splintering,leaves flaking) quietly underfoot.
+            - Sparse trees grow (here and there,in small groves) amid the rocks.
+        desc2:
+            - A phosphoresent (blue,green,yellow) light (gleams,glitters) through the leaves.
+            - (Scattered piles,Thick clumps) of fragile stone leaves drift over the ground.
+            - (Drifts,Piles) of stone leaves lie thick around the trunks.
+            - (Patchy green lichen,A grey-brown moss) speckles the ground.
+            - A few (blades,patches,clumps) of (pale green,dark green,yellow) crystals grow between the tree roots.
+            - (Deep green,Pale green,Quiet blue,vivid purple) moss glows on the forest roof.
+            - Scattered (boulders lean, nightweed huddles) against the tree trunks.
+    surrounding: A faint blue light emmanates from a nearby cavern.
+    
+deep cave:
+    simple: Darkness presses in around you.  Mountains of rock weigh heavy overhead.
+    name: (Deep inside,Within) (Forgotten,Ancient,Forbidden) (Depths,Caverns)
+    desc:
+        desc1:
+            - Darkness presses in around you.
+            - The caves delve ever deeper.
+            - You push your way through fallen debris.
+            - Stalagmites closely together, making the way forward difficult.
+            - You clamber across huge boulders.
+            - You squeeze through a narrow gap between towering walls of rock.
+            - Glowing gemstones litter the walls.
+        desc2:
+            - Mountains of rock weigh heavy overhead.
+            - Harsh stone scrapes against your arms.
+            - The air seems stuffy.
+            - Thick gravel clutters the cave floor.
+            - A thick black substance oozes from the ceiling, forming slow streamers to the ground below.
+            - Thick roots thrust from the ground at your feet.
+            - Clumps of twisted nightweed thrive all around.
+    surrounding: Not far away, the darkness deepens as the caverns plunge suddenly downwards.
+    
+cave:
+    simple: You move through a dim cave.  The light from your forge flickers on the walls.
+    name: (In,Near) a (Cave,Tunnel)
+    desc:
+        desc1:
+            - You move through a dim cave.
+            - (Thick,Thin,Wavy) (green,yellow,brown) moss climbs the walls.
+            - A pile of (rocky, smooth, jagged) rocks blocks part of the tunnel.
+            - Rotten wooden beams creak uneasily at the ceiling. 
+            - Gravel and dust scuff under your feet.
+        desc2:
+            - A (chill,warm) (gust,waft) of air brushes your face.
+            - (Dark,Pale) (green,yellow) moss grows about your feet.
+            - Clumps of (broken,shattered) stalactites dot the ground.
+            - A few shards of (pale,green,yellow,blue) crystal push up through the earth.
+            - The ground is bare, with dry rocky soil.
+            - (Sandy,Rich) (brown, black) dirt shifts underfoot.
+            - Dust plumes around your feet as you trudge forward.
+            - (Clumps of,Stands of) (sickly, dry) cave weeds sprout nearby.
+            - A single (enormous,sickly,small) stalagmite grows beside you.
+    surrounding: Tunnels stretch into the darkness.
+    
+water:
+    simple: A dark stream rushes past your feet.  Gravel lines its edge.
+    name: (Close By,Near,By,Beside,Approaching) (the Water,a Stream)
+    desc:
+        desc1:
+            - A dark stream (rushes,bubbles,creeps) (past your feet,nearby,ahead of you,around your legs).
+            - (Rough,Fine,Smooth,Crunchy) (gravel,sand) (lies along,marks) the (edge,bank) of a (creeping,dripping,rushing,winding,meandering,small,noisy) (stream,streamlet,river).
+            - Gravel (crunches,slides) beneath your feet as you walk beside a (small,meandering,rushing,creeping,subterranean) (stream,river).
+            - (Velvety,Damp,Thick,Green,Slimy,Rough) moss covers stones leading to a (small,meandering,rushing,subterranean) (stream,river).
+            - The (noise,sound) of (trickling,burbling,splashing) water (fills the air,meets your ears) as you (walk towards,approach,near) a (stream,river).
+        desc2:
+            - (Dry,Yellow,Brown) reeds grow along its edge.
+            - Boulders block the path along the bank.
+            - Dozens of (slimy,slippery,yucky) (slugs,snails,fish lice) squirm out of your way as you (wade,splash) along. 
+            - Sunlight (dimly gleams,glints,brightly gleams) from the (rippling,tranquil) water.
+            - (Rocks,Boulders) break the surface of the water, sending (plumes of foam,sprays) (rushing downstream,into the air).
+            - A (pile of branches,large log) lies across the stream, holding the water back into a pooling whirlpool.
+    surrounding: You hear the dripping gurgle of water nearby.
+    
+near dwarf:
+    simple: The landscape slopes steeply upwards here.  Dense brush makes the passage difficult.
+    name: (Climbing a Hill,On a Hillside,Rising Hillside)
+    desc:
+        desc1:
+            - The landscape slopes (gently,steeply,quickly,slowly) upwards here.
+            - A hill (gently,quickly,sharply) rises.
+            - Terraced steps lead up a (gentle,tall) hill.
+        desc2:
+            - Dense (foliage,brush) makes (walking,the passage) (difficult,slow).
+            - (Small boulders,Small stones,Large Boulders) (litter,carpet,speckle) the hillside.
+            - (Straggly,Scattered,Stands of) (oak,beech,maple) (saplings,trees) (march,spatter,spread) (up the hill,across the hillside).
+            - A crumbling boulder sits ponderously in a mound of earth where it has rolled from higher up the hill.
+            - A solitary (beech,maple,oak,sapwood) tree stands like a sentinel.
+            - The hillside is broken by small sloughs and cliffs, and passage is treacherous.
+    surrounding: In the distance, a hill begins to slope upwards.
+    
+dwarf:
+    simple: You stand atop a rocky hill.  The landscape spreads below you.
+    name: (Above the forest,On top of a Hill,Atop a knoll)
+    desc:
+        desc1:
+            - You stand atop a (rocky,forested,grassy) hill.
+            - (Wind,A breeze) (blows in your face,ruffles your hair,gusts) as you (crest the hill,reach the summit of the hill,stand atop a hill).
+            - The view from the top of the hill is (incredible,underwhelming,decent).
+        desc2:
+            - The landscape spreads below you.
+            - (Dark,Creamy,Smooth,Hard,Rough) (stone,rock) (covers,rings) (the ground,the steep slopes of the hill,the hilltop).
+            - A (huge boulder, stone cairn, pile of stones, ring of broken stones, ruined foundation) marks the (summit,top) of the (low,high) hill.
+            - A (stand,grove,cluster) of (tall,sturdy,slender,young,ancient,stout,crooked,sapling) (beech,maple,oak) trees (strech,wave,rustle) (in the wind,nearby,just off the hilltop). 
+            - A solitary sapwoood tree stands at the top of the hill, mounds of dried sap surrounding its base.
+            - Thick grass blankets the top of the hill.
+    surrounding: A hilltop looms nearby.
+    
+generic_props:
+    - A cracked stone column lies fallen on the ground, overgrown with ivy. $a stone column
+    - A huge lightning struck oak tree once grew here.  Now it raises twisted, leafless branches to the sky. $a dead oak
+    - Beside you, a mossy boulder rests ponderously, sunk deep into the earth. $a mossy boulder
+    - Two squirrels perch atop a low stone bench with rough carvings.  They chitter in anger when they see you. $a stone bench
+    - A patch of brilliant red flowers sprout from the ground with petals like velvet teardrops. $a flower patch
+    - Three large stones are stacked atop one another, seemingly oblivious to gravity. $some piled stones
+    - A hollow stump clings tenaciously to the ground. $a hollow stump
+    - A ferret peeks at you from beneath a fallen log. $a fallen log
+    - A fallen tree slowly rots on the ground. Splinters of wood fall from the ruined trunk. $a fallen tree
+    - You come across the remains of long dead campfire.  Small bones litter the ashes. $an old campfire
+    - A pile of stones here seems to be home to a whole nest of mice.  They scatter as you approach. $a stone pile
+    - A signpost leans at an angle, aged wood bleached white.  There were words etched here once, but they are unreadable. $an ancient signpost
+    
+objectives:
+    - A tall ramshackle wooden structure rises above you.  Hooded figures move past high windows, and several horses are tethered nearby.  It seems you have stumbled upon a bandit tower. $A Bandit Tower
+    - Before you, whole trees have been woven togther to form a dense wall of branches.  You circle the wall until you find an opening.  Before the door, bones lie scattered around a smoking firepit.  This must be an ogre's lair. $An Ogre's Lair
+    - You hear cackling long before the tall circle of ancient stones comes into view.  Within the circle, figures work furiously around a blazing spellfire.  Do you dare to disturb a witches circle? $A Witchs' Circle
+    - A fetid stench fills the air, a dark musky scent.  Between two large boulders, a yawning tunnel opens into darkness.  Bones lie scattered around the opening, gnawed with huge teeth.  You have come across a werewolf's den. $A Werewolf's Den
+    
+sidequests:
+    - A rocky cave opens into the forest.  It stinks of troll.$a troll cave
+    - You pick your way carefully around the base of a long forgotten tower.  Ivy climbs up the side, and the door seems to be rusted shut.$an abandoned tower
+    - The ground softens beneath your feet, and you quickly find yourself knee deep in swamp water.$a murky swamp
+    - Before you, the silty ground has fallen away into a large sinkhole.  A fallen tree leans out of the hole, providing a way down.$a deep sinkhole
+    - Clanging fills the air, and you soon find a tunnel entrance carved into the ground.  Crude railtracks lead inside, and you hear the sound of shrill voices that could only be goblins.$a goblin mine
+    - Nestled under a looming tree you spy an old wooden hut.  Strange runes are marked about the door, and pale green smoke drifts from the chimney.$a witch's hut
+    - A strange bittersweet scent fills the air.  Looking around, you trace the scent to a peculiar tree with pale white bark and blood-red leaves.  The scent emenates from the tree's fruit, golden orbs that seem to glow with an inner light.$an enchanted tree
+    - You nearly trip over the skeleton of a man half buried under a drift of leaves.  A chain leads from his ankle to a hole in a hollow tree.  A quick search reveals that the poor wretch was chained to a large wooden chest inside the tree, but who he was you'll never know.$a treasure chest
+    - A melodious voice breaks the stillness of the forest, singing a jovial tune.  Soon a strolling player strides into sight, plucking a lute.$a singing bard
+    - A few scattered stones lead to an overgrown path, and soon a ruin is before you.  The remnants of a castle crumble into the dust. Fallen battlements and faded banners call back memories of a grander time.$a ruined castle
