@@ -92,28 +92,28 @@ water:
     surrounding: You hear the dripping gurgle of water nearby.
     
 near dwarf:
-    simple: The landscape slopes steeply upwards here.  Dense brush makes the passage difficult.
-    name: (Climbing a Hill,On a Hillside,Rising Hillside)
+    simple: You see the signs of dwarves nearby.  Deeply carved symbols line the walls.
+    name: (Approaching a Dwarven Fortress,Near Dwarves)
     desc:
         desc1:
-            - The landscape slopes (gently,steeply,quickly,slowly) upwards here.
-            - A hill (gently,quickly,sharply) rises.
-            - Terraced steps lead up a (gentle,tall) hill.
+            - You see the signs of dwarves nearby.
+            - The sound of hammering fills the air.
+            - The air reeks of (dwarf,coal,forges).
         desc2:
-            - Dense (foliage,brush) makes (walking,the passage) (difficult,slow).
-            - (Small boulders,Small stones,Large Boulders) (litter,carpet,speckle) the hillside.
-            - (Straggly,Scattered,Stands of) (oak,beech,maple) (saplings,trees) (march,spatter,spread) (up the hill,across the hillside).
-            - A crumbling boulder sits ponderously in a mound of earth where it has rolled from higher up the hill.
-            - A solitary (beech,maple,oak,sapwood) tree stands like a sentinel.
-            - The hillside is broken by small sloughs and cliffs, and passage is treacherous.
-    surrounding: In the distance, a hill begins to slope upwards.
+            - Deeply carved symbols line the walls.
+            - (Magnificent,Antique,Magestic) stonework turns the cave into a wonder.
+            - (Soaring columns,Soaring arches) extend into the distance.
+            - A crumbling statues sits ponderously in a mound of earth where it has fallen.
+            - A solitary wooden signpost marks the way.
+            - The floor is paved underfoot with clever workmanship.
+    surrounding: Nearby, the rocky floor gives way to smooth paving stones.
     
 dwarf:
-    simple: You stand atop a rocky hill.  The landscape spreads below you.
-    name: (Above the forest,On top of a Hill,Atop a knoll)
+    simple: You stand within a dwarven fortress.  The tools of master craftsmen surround you.
+    name: (Within a dwarven fortress,Inside a Dwarven Palace,A Dwarven Workshop)
     desc:
         desc1:
-            - You stand atop a (rocky,forested,grassy) hill.
+            - You stand within a dwarven (fortress,palace,workshop).
             - (Wind,A breeze) (blows in your face,ruffles your hair,gusts) as you (crest the hill,reach the summit of the hill,stand atop a hill).
             - The view from the top of the hill is (incredible,underwhelming,decent).
         desc2:
