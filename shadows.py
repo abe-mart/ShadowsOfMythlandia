@@ -374,7 +374,8 @@ def generate_room_details(room_id, neighbor_ids, client):
     ]
 
     prompt = {
-        "model": "gpt-4o-2024-08-06",
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "system",
@@ -437,19 +438,19 @@ for i, d in enumerate(dirlist):
         st.rerun()  # Refresh the app with the new room
 
 # Action Buttons
-st.write("### Actions:")
-col1, col2, col3 = st.columns(3)
+# st.write("### Actions:")
+# col1, col2, col3 = st.columns(3)
 
-with col1:
-    if st.button("Attack!"):
-        text += "\nOw, what was that for?"
-with col2:
-    if st.button("Defend!"):
-        text += "\nBlocked!"
-with col3:
-    if st.button("Balloons!"):
-        st.balloons()
-        text += "\nHooray!"
+# with col1:
+#     if st.button("Attack!"):
+#         text += "\nOw, what was that for?"
+# with col2:
+#     if st.button("Defend!"):
+#         text += "\nBlocked!"
+# with col3:
+#     if st.button("Balloons!"):
+#         st.balloons()
+#         text += "\nHooray!"
 
 # Update text area
 with text_placeholder:
@@ -463,7 +464,25 @@ G_filtered, visited_nodes, unvisited_neighbors = build_dungeon_graph(data, st.se
 
 fig = visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, st.session_state.current_room_id)
 fig.update_layout(showlegend=False)
-st.plotly_chart(fig, config = {'displayModeBar': False})
+with st.container(border=True):
+    st.plotly_chart(fig, config = {'displayModeBar': False})
 
 # Footer Text
-st.write("The up and coming best game of 2022. - Everyone Ever")
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.divider()
+cols = st.columns(3)
+with cols[0]:
+    st.image('Images/badge.jpeg')
+with cols[1]:
+    st.image('Images/badge2.jpeg')
+with cols[2]:
+    st.image('Images/badge3.jpeg')
+# %%
