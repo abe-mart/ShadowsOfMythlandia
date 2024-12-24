@@ -17,6 +17,9 @@ if "current_room_id" not in st.session_state:
     st.session_state.current_room_id = 1  # Starting room ID
 if "first_run" not in st.session_state:
     st.session_state.first_run = True
+if "previous_room_id" not in st.session_state:
+    st.session_state.previous_room_id = None
+
 
 # Hide menu in production
 hide_streamlit_style = """
@@ -299,6 +302,30 @@ def initialize_database():
     # Set the first room as the starting room
     cursor.execute("UPDATE rooms SET description = 'You enter the dungeon.' WHERE id = 1")
 
+    # Create the monsters table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS monsters (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        room_id INTEGER NOT NULL,
+        hp INTEGER DEFAULT 10,
+        attack INTEGER DEFAULT 3,
+        alive BOOLEAN DEFAULT 1,
+        FOREIGN KEY (room_id) REFERENCES rooms (id)
+    )
+    ''')
+
+    # Example monster entries
+    monsters = [
+        (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 1),
+        (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 1),
+    ]
+    cursor.executemany('''
+    INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, alive) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', monsters)
+
     conn.commit()
     conn.close()
 
@@ -332,9 +359,18 @@ def get_room_description(room_id):
     cursor.execute("SELECT name, description, connections, visited FROM rooms WHERE id = ?", (room_id,))
     room_data = cursor.fetchone()
 
+    # Fetch monster data
+    cursor.execute("SELECT name, description, hp, alive FROM monsters WHERE room_id = ? AND alive = 1", (room_id,))
+    monster_data = cursor.fetchone()
+
     if room_data:
         room_name, room_description, room_connections, visited = room_data
         text = f"---{room_name}---\n{room_description}"
+
+        if monster_data:
+            monster_name, monster_description, monster_hp, alive = monster_data
+            text += f"\n\nYou see a {monster_name}: {monster_description} (HP: {monster_hp})"
+
 
         dirlist = []  # Directions to display
         codelist = []  # Room IDs for the directions
@@ -428,24 +464,61 @@ text, dirlist, codelist = get_room_description(st.session_state.current_room_id)
 # %% UI Components
 text_placeholder = st.empty()  # Main game text display
 
-# Direction Buttons
-st.write("### Choose a direction:")
-cols = st.columns(len(dirlist) or 1)
-for i, d in enumerate(dirlist):
-    if cols[i].button(d):
-        st.session_state.current_room_id = codelist[i]
-        st.rerun()  # Refresh the app with the new room
+# Check for monsters in the current room
+conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("SELECT id, name, hp, attack FROM monsters WHERE room_id = ? AND alive = 1", (st.session_state.current_room_id,))
+monster = cursor.fetchone()
+conn.close()
+
+if monster:
+    monster_id, monster_name, monster_hp, monster_attack = monster
+    st.write(f"A wild {monster_name} appears! (HP: {monster_hp})")
+
+    # Battle controls
+    col1, col2, col3 = st.columns(3)
+    if col1.button("Attack"):
+        monster_hp -= random.randint(3, 6)  # Player attack
+        if monster_hp <= 0:
+            st.write(f"You defeated the {monster_name}!")
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE monsters SET alive = 0 WHERE id = ?", (monster_id,))
+            conn.commit()
+            conn.close()
+            st.rerun()
+        else:
+            st.write(f"The {monster_name} has {monster_hp} HP left!")
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
+            conn.commit()
+            conn.close()
+    if col2.button("Defend"):
+        st.write("You defend against the attack!")
+    if col3.button("Flee"):
+        st.session_state.current_room_id = st.session_state.previous_room_id
+        st.rerun()
+else:
+    # Direction Buttons
+    st.write("### Choose a direction:")
+    cols = st.columns(len(dirlist) or 1)
+    for i, d in enumerate(dirlist):
+        if cols[i].button(d):
+            st.session_state.previous_room_id = st.session_state.current_room_id
+            st.session_state.current_room_id = codelist[i]
+            st.rerun()  # Refresh the app with the new room
 
 # Action Buttons
 st.write("### Actions:")
 col1, col2, col3 = st.columns(3)
 
-with col1:
-    if st.button("Attack!"):
-        text += "\nOw, what was that for?"
-with col2:
-    if st.button("Defend!"):
-        text += "\nBlocked!"
+# with col1:
+#     if st.button("Attack!"):
+#         text += "\nOw, what was that for?"
+# with col2:
+#     if st.button("Defend!"):
+#         text += "\nBlocked!"
 with col3:
     if st.button("Balloons!"):
         st.balloons()
