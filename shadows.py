@@ -5,12 +5,10 @@ import random
 from openai import OpenAI
 from pydantic import BaseModel
 from typing import List
-import networkx as nx
-import plotly.graph_objects as go
+
+from visualization import build_dungeon_graph, visualize_dungeon_plotly, compute_dungeon_layout, compute_pos, visualize_dungeon_plotly, fetch_dungeon_data
 
 st.set_page_config(layout="centered", page_title="Shadows of Mythlandia", menu_items=None, initial_sidebar_state="collapsed")
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # %% Session State Setup
 if "current_room_id" not in st.session_state:
@@ -31,7 +29,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Logo
-st.image('Images/Shadows.png', use_column_width=True)
+st.image('Images/Shadows.png', use_container_width=True)
 
 def generate_dungeon_with_cycles(num_rooms, main_cycle_size, num_subcycles, subcycle_size_range):
     """
@@ -91,175 +89,6 @@ def generate_dungeon_with_cycles(num_rooms, main_cycle_size, num_subcycles, subc
     
     return rooms
 
-def fetch_dungeon_data():
-    """Fetch room data from the database."""
-    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, connections, visited FROM rooms")
-    data = cursor.fetchall()
-    conn.close()
-    return data
-
-def compute_dungeon_layout(data):
-    """Build the graph and compute a consistent layout."""
-    G = nx.Graph()
-    for room_id, name, connections_json, visited in data:
-        connections = json.loads(connections_json)
-        G.add_node(room_id, name=name, visited=visited)
-        for connection in connections:
-            G.add_edge(room_id, connection)
-
-    # Compute and return the layout for consistent positioning
-    pos = nx.spring_layout(G, seed=42)  # Use a seed for reproducibility
-    return G, pos
-
-@st.cache_data
-def compute_pos(data_sub):
-    """Build the graph and compute a consistent layout."""
-    G = nx.Graph()
-    for room_id, connections_json in data_sub:
-        connections = json.loads(connections_json)
-        G.add_node(room_id)
-        for connection in connections:
-            G.add_edge(room_id, connection)
-
-    # Compute and return the layout for consistent positioning
-    pos = nx.spring_layout(G, seed=42)  # Use a seed for reproducibility
-    return pos
-
-
-def build_dungeon_graph(data, current_room_id):
-    """Filter the graph to focus on visited nodes and neighbors."""
-    G = nx.Graph()
-    visited_nodes = []
-    unvisited_neighbors = []
-    current_neighbors = []
-
-    for room_id, name, connections_json, visited in data:
-        connections = json.loads(connections_json)
-        G.add_node(room_id, name=name, visited=visited)
-        if visited:
-            visited_nodes.append(room_id)
-        if room_id == current_room_id:
-            current_neighbors = connections  # Track neighbors of the current room
-        for connection in connections:
-            G.add_edge(room_id, connection)
-
-    for neighbor in current_neighbors:
-        if neighbor not in visited_nodes:
-            unvisited_neighbors.append(neighbor)
-    
-    return G, visited_nodes, unvisited_neighbors
-
-def visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, current_room_id):
-    """Create an interactive Plotly visualization of the dungeon."""
-    # Identify unseen nodes (not visited and not immediate neighbors)
-    all_nodes = set(G.nodes())
-    seen_nodes = set(visited_nodes + unvisited_neighbors)
-    unseen_nodes = list(all_nodes - seen_nodes)
-
-    # Build traces for Plotly
-    traces = []
-
-    # Edges
-    edge_traces = []
-        
-    for edge in G.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        
-        if (edge[0] in visited_nodes and edge[1] in visited_nodes) or \
-        (edge[0] in visited_nodes and edge[1] in unvisited_neighbors) or \
-        (edge[1] in visited_nodes and edge[0] in unvisited_neighbors):
-            # Edge is visible
-            edge_color = "white"
-            if (edge[0] in visited_nodes and edge[1] in unvisited_neighbors) or \
-            (edge[1] in visited_nodes and edge[0] in unvisited_neighbors):
-                line_dash = "dot"
-            else:
-                line_dash = "solid"
-        else:
-            # Edge is fully transparent
-            edge_color = "rgba(255, 255, 255, 0)"
-            line_dash = "solid"
-        
-        edge_traces.append(go.Scatter(
-            x=[x0, x1, None], y=[y0, y1, None],
-            line=dict(width=1, color=edge_color, dash=line_dash),
-            hoverinfo='none',
-            mode='lines'
-        ))
-        
-    traces.extend(edge_traces)
-
-    # Visited nodes
-    x_visited = [pos[node][0] for node in visited_nodes]
-    y_visited = [pos[node][1] for node in visited_nodes]
-    traces.append(go.Scatter(
-        x=x_visited, y=y_visited,
-        mode='markers',
-        marker=dict(size=15, color='#b01414', symbol='circle'),
-        name='Visited Rooms',
-        text=[G.nodes[node]['name'] for node in visited_nodes],
-        hoverinfo='text'
-    ))
-
-    # Immediate unvisited neighbors
-    for visited_node in visited_nodes:
-        for neighbor in G.neighbors(visited_node):
-            if neighbor not in visited_nodes:
-                unvisited_neighbors.append(neighbor)
-
-    # Immediate unvisited neighbors
-    x_unvisited = [pos[node][0] for node in unvisited_neighbors]
-    y_unvisited = [pos[node][1] for node in unvisited_neighbors]
-    traces.append(go.Scatter(
-        x=x_unvisited, y=y_unvisited,
-        mode='markers',
-        marker=dict(size=12, color='rgba(255, 102, 0, 0.5)', symbol='circle'),
-        name='Unvisited Rooms',
-        text=[G.nodes[node]['name'] for node in unvisited_neighbors],
-        hoverinfo='text'
-    ))
-
-    # Unseen nodes (fully transparent)
-    x_unseen = [pos[node][0] for node in unseen_nodes]
-    y_unseen = [pos[node][1] for node in unseen_nodes]
-    traces.append(go.Scatter(
-        x=x_unseen, y=y_unseen,
-        mode='markers',
-        marker=dict(size=12, color='rgba(0, 0, 0, 0)', symbol='circle'),
-        name='Unseen Rooms',
-        text=["Unseen Room"] * len(unseen_nodes),
-        hoverinfo='none'  # No hover info for unseen rooms
-    ))
-
-    # Current node
-    x_current = [pos[current_room_id][0]]
-    y_current = [pos[current_room_id][1]]
-    traces.append(go.Scatter(
-        x=x_current, y=y_current,
-        mode='markers',
-        marker=dict(size=20, color='#f2f217', symbol='circle'),
-        name='Current Room',
-        text=[G.nodes[current_room_id]['name']],
-        hoverinfo='text'
-    ))
-
-    # Layout for Plotly
-    layout = go.Layout(
-        title=" ",
-        title_font=dict(color='white'),
-        showlegend=True,
-        plot_bgcolor='rgba(0, 0, 0, 0)',
-        paper_bgcolor='rgba(0, 0, 0, 0)',
-        xaxis=dict(showgrid=False, zeroline=False, visible=False),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False)
-    )
-
-    fig = go.Figure(data=traces, layout=layout)
-    return fig
-
 class RoomDetails(BaseModel):
     id: int
     name: str
@@ -311,20 +140,39 @@ def initialize_database():
         room_id INTEGER NOT NULL,
         hp INTEGER DEFAULT 10,
         attack INTEGER DEFAULT 3,
-        alive BOOLEAN DEFAULT 1,
+        defeated BOOLEAN DEFAULT 0,
         FOREIGN KEY (room_id) REFERENCES rooms (id)
     )
     ''')
 
     # Example monster entries
     monsters = [
-        (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 1),
-        (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 1),
+        (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 0),
+        (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 0),
     ]
     cursor.executemany('''
-    INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, alive) 
+    INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
     VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', monsters)
+
+    # Create the player_stats table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS player_stats (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT 'Hero',
+        hp INTEGER DEFAULT 100,
+        attack INTEGER DEFAULT 10,
+        defense INTEGER DEFAULT 5
+    )
+    ''')
+
+    # Initialize player stats if not already present
+    cursor.execute("SELECT COUNT(*) FROM player_stats")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute('''
+        INSERT INTO player_stats (id, name, hp, attack, defense) 
+        VALUES (1, 'Hero', 100, 10, 5)
+        ''')
 
     conn.commit()
     conn.close()
@@ -350,17 +198,29 @@ def get_room_description(room_id):
     visited, connections_json = room_data
     neighbor_ids = json.loads(connections_json)
 
-    if not visited:
-        # Generate names and descriptions for the current room and neighbors
-        name, description = generate_room_details(room_id, neighbor_ids,client)
-        cursor.execute("UPDATE rooms SET visited = 1 WHERE id = ?", (room_id,))
-        conn.commit()
+    # Query monsters in the current room
+    cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (room_id,))
+    current_room_monsters = cursor.fetchall()
+
+    # Query monsters in neighboring rooms
+    neighbor_monsters = []
+    for neighbor_id in neighbor_ids:
+        cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (neighbor_id,))
+        neighbor_monsters.extend(cursor.fetchall())
+
+    all_monsters = current_room_monsters + neighbor_monsters
+
+    # if not visited:
+    # Generate names and descriptions for the current room and neighbors
+    name, description = generate_room_details(room_id, neighbor_ids, visited, current_room_monsters, all_monsters)
+    cursor.execute("UPDATE rooms SET visited = 1 WHERE id = ?", (room_id,))
+    conn.commit()
 
     cursor.execute("SELECT name, description, connections, visited FROM rooms WHERE id = ?", (room_id,))
     room_data = cursor.fetchone()
 
     # Fetch monster data
-    cursor.execute("SELECT name, description, hp, alive FROM monsters WHERE room_id = ? AND alive = 1", (room_id,))
+    cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (room_id,))
     monster_data = cursor.fetchone()
 
     if room_data:
@@ -368,8 +228,7 @@ def get_room_description(room_id):
         text = f"---{room_name}---\n{room_description}"
 
         if monster_data:
-            monster_name, monster_description, monster_hp, alive = monster_data
-            text += f"\n\nYou see a {monster_name}: {monster_description} (HP: {monster_hp})"
+            monster_name, monster_description, monster_hp, defeated = monster_data
 
 
         dirlist = []  # Directions to display
@@ -390,7 +249,13 @@ def get_room_description(room_id):
     conn.close()
     return "Room not found!", [], []
 
-def generate_room_details(room_id, neighbor_ids, client):
+@st.cache_resource
+def get_client():
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    return client
+
+@st.cache_data
+def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters, monsters):
     """Generate room names and descriptions using OpenAI JSON mode."""
     # Query current room and neighboring room details
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
@@ -403,11 +268,59 @@ def generate_room_details(room_id, neighbor_ids, client):
         ",".join("?" * len(neighbor_ids))), neighbor_ids)
     neighbors = cursor.fetchall()
 
+    # Query monsters in the current room
+    cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (room_id,))
+    current_room_monsters = cursor.fetchall()
+
+    # Query monster states
+    alive_monsters = [m for m in current_room_monsters if not m[3]]  # 'defeated' is at index 3 in the tuple
+    defeated_monsters = [m for m in current_room_monsters if m[3]]  # 'defeated' is at index 3 in the tuple
+
+    # Query monsters in neighboring rooms
+    neighbor_monsters = []
+    for neighbor_id in neighbor_ids:
+        cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (neighbor_id,))
+        neighbor_monsters.extend(cursor.fetchall())
+
     # Format current room and neighbors for the AI prompt
     neighbors_for_ai = [
         {"id": r[0], "name": r[1] if r[1] else "Unknown", "description": r[2] if r[2] else "Undescribed"}
         for r in neighbors
     ]
+
+    # Format monsters for the AI prompt
+    current_room_monsters_for_ai = [
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        for r in current_room_monsters
+    ]
+    alive_monsters_for_ai = [
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        for r in alive_monsters
+    ]
+    defeated_monsters_for_ai = [
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        for r in defeated_monsters
+    ]
+    neighbor_monsters_for_ai = [
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        for r in neighbor_monsters
+    ]
+
+    prompt_text = (
+        f"Current room: ID: {current_room_data[0]}, Name: {current_room_data[1] or 'Unknown'}, "
+        f"visited: {visited}\n"
+        f"Description: {current_room_data[2] or 'Undescribed'}\n\n"
+        f"Alive monsters in current room:\n{json.dumps(alive_monsters_for_ai, indent=4)}\n\n"
+        f"Defeated monsters in current room:\n{json.dumps(defeated_monsters_for_ai, indent=4)}\n\n"
+        f"Neighbors:\n{json.dumps(neighbors_for_ai, indent=4)}\n\n"
+        f"Monsters in neighboring rooms:\n{json.dumps(neighbor_monsters_for_ai, indent=4)}\n\n"
+        f"Provide a short but immersive room description considering these details. Feel free to alter details of the existing description.\n"
+        "Provide output in JSON format:\n"
+        "{'current_room': {'id': '', 'name': '', 'description': ''}, "
+        "'neighbors': [{'id': '', 'name': '', 'description': ''}, ...], "\
+    )
+
+    print(prompt_text)
 
     prompt = {
         # "model": "gpt-4o-2024-08-06",
@@ -417,23 +330,28 @@ def generate_room_details(room_id, neighbor_ids, client):
                 "role": "system",
                 "content": (
                     "You are a dungeon master generating immersive room details for a text adventure game. "
-                    "Given the current room and its neighbors, provide names and descriptions for each room. "
+                    "Given the current room, its neighbors, and the monsters within, "
+                    "provide names and descriptions for each room. Make sure to take into account if the player already defeated the monsters or not."
                     "Descriptions should hint at interconnections and an overarching story."
+                    "The game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    "mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    "forgotten tombs, tunnels, and the like."
+                    "The room descriptions should be palpable and vivid, as if you were there yourself."
+                    "To make the game more atmospheric and immersive, room descriptions should use information"
+                    "from the surrounding rooms and the monsters within them to create a sense of surroundings."
+                    "When there is a monster present, make sure to focus the description on the monster, and make it clear that it's there."
+                    "Remember that not every room has to be an iconic location, sometimes there are just passageways or tunnels."
+                    "Keep responses to 500 characters or less"
                 ),
             },
             {
                 "role": "user",
-                "content": (
-                    f"Current room: ID: {current_room_data[0]}, Name: {current_room_data[1] or 'Unknown'}, "
-                    f"Description: {current_room_data[2] or 'Undescribed'}\n\n"
-                    f"Neighbors:\n{json.dumps(neighbors_for_ai)}\n\n"
-                    "Provide output in JSON format:\n"
-                    "{'current_room': {'id': '', 'name': '', 'description': ''}, "
-                    "'neighbors': [{'id': '', 'name': '', 'description': ''}, ...]}"
-                ),
+                "content": prompt_text,
             },
         ],
     }
+
+    client = get_client()
 
     # Call OpenAI to generate room details
     completion = client.beta.chat.completions.parse(**prompt, response_format=DungeonRoomInfo)
@@ -468,36 +386,82 @@ text_placeholder = st.empty()  # Main game text display
 # Check for monsters in the current room
 conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
 cursor = conn.cursor()
-cursor.execute("SELECT id, name, hp, attack FROM monsters WHERE room_id = ? AND alive = 1", (st.session_state.current_room_id,))
+cursor.execute("SELECT id, name, hp, attack FROM monsters WHERE room_id = ? AND defeated = 0", (st.session_state.current_room_id,))
 monster = cursor.fetchone()
 conn.close()
 
-if monster:
-    monster_id, monster_name, monster_hp, monster_attack = monster
-    st.write(f"A wild {monster_name} appears! (HP: {monster_hp})")
+# Define the battle dialog
+@st.dialog("Battle Time!")
+def battle_dialog(monster_id):
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, hp, attack FROM monsters WHERE id = ?", (monster_id,))
+    monster_info = cursor.fetchone()
+    if monster_info:
+        monster_name, monster_hp, monster_attack = monster_info
+    else:
+        monster_name = ""
+        monster_hp = 0
+        monster_attack = 0
 
-    # Battle controls
+    # Fetch player stats
+    cursor.execute("SELECT hp, attack, defense FROM player_stats WHERE id = 1")
+    player_hp, player_attack, player_defense = cursor.fetchone()
+    conn.close()
+
+    st.write(f"### A {monster_name} appears!")
+
+    hp_placeholder = st.empty()
+
+    with hp_placeholder.container():
+        st.write(f"**HP:** {monster_hp} | **Attack:** {monster_attack}")
+        st.write(f"**Your HP:** {player_hp} | **Your Attack:** {player_attack}")
+
+    # Battle options
     col1, col2, col3 = st.columns(3)
     if col1.button("Attack"):
-        monster_hp -= random.randint(3, 6)  # Player attack
+        damage = max(1, player_attack - monster_attack // 2)  # Simple damage formula
+        monster_hp -= damage
+        st.warning(f"You dealt {damage} damage to {monster_name}!")
+
         if monster_hp <= 0:
-            st.write(f"You defeated the {monster_name}!")
+            st.success(f"You defeated the {monster_name}!")
             conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
             cursor = conn.cursor()
-            cursor.execute("UPDATE monsters SET alive = 0 WHERE id = ?", (monster_id,))
+            cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
             conn.commit()
             conn.close()
             st.rerun()
         else:
-            st.write(f"The {monster_name} has {monster_hp} HP left!")
-            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-            cursor = conn.cursor()
-            cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
-            conn.commit()
-            conn.close()
+            # Monster attacks back
+            monster_damage = max(1, monster_attack - player_defense)
+            player_hp -= monster_damage
+            st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
+            with hp_placeholder.container():
+                st.write(f"**HP:** {monster_hp} | **Attack:** {monster_attack}")
+                st.write(f"**Your HP:** {player_hp} | **Your Attack:** {player_attack}")
+            if player_hp <= 0:
+                st.error("You have been defeated! Game Over.")
+                st.stop()
+            else:
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
+                cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
+                conn.commit()
+                conn.close()
+
     if col2.button("Defend"):
-        st.write("You defend against the attack!")
-    if col3.button("Flee"):
+        st.info("You brace yourself and defend against the attack!")
+
+if monster:
+    monster_id, monster_name, monster_hp, monster_attack = monster
+
+    # Battle controls
+    col1, col2, col3 = st.columns(3)
+    if col1.button("Fight!"):
+        battle_dialog(monster_id)
+    if col2.button("Flee"):
         st.session_state.current_room_id = st.session_state.previous_room_id
         st.rerun()
 else:
@@ -527,18 +491,24 @@ else:
 
 # Update text area
 with text_placeholder:
-    st.text_area("text", value=text, height=150, disabled=True, label_visibility="collapsed")
+    st.text_area("text", value=text, height=170, disabled=True, label_visibility="collapsed")
 
-data = fetch_dungeon_data()
-G, pos = compute_dungeon_layout(data)
-datasub = [(row[0], row[2]) for row in data]
-pos = compute_pos(datasub)
-G_filtered, visited_nodes, unvisited_neighbors = build_dungeon_graph(data, st.session_state.current_room_id)
+# @st.dialog("Dungeon Map")
+def build_dungeon_map():
+    data = fetch_dungeon_data()
+    G, pos = compute_dungeon_layout(data)
+    datasub = [(row[0], row[2]) for row in data]
+    pos = compute_pos(datasub)
+    G_filtered, visited_nodes, unvisited_neighbors = build_dungeon_graph(data, st.session_state.current_room_id)
 
-fig = visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, st.session_state.current_room_id)
-fig.update_layout(showlegend=False)
-with st.container(border=True):
+    fig = visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, st.session_state.current_room_id)
+    fig.update_layout(showlegend=False)
     st.plotly_chart(fig, config = {'displayModeBar': False})
+
+# if st.button("Dungeon Map"):
+with st.container(border=True):
+    build_dungeon_map()
+
 
 # Footer Text
 st.write('#')
