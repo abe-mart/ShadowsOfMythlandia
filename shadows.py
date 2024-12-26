@@ -98,6 +98,22 @@ class DungeonRoomInfo(BaseModel):
     current_room: RoomDetails
     neighbors: List[RoomDetails]
 
+class MonsterInfo(BaseModel):
+        id: int
+        name: str
+        description: str
+        room_id: int
+        hp: int
+        attack: int
+
+class MonstersInfo(BaseModel):
+    monsters: List[MonsterInfo]
+
+@st.cache_resource
+def get_client():
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    return client
+
 # %% Initialize database on first run
 def initialize_database():
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
@@ -145,15 +161,15 @@ def initialize_database():
     )
     ''')
 
-    # Example monster entries
-    monsters = [
-        (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 0),
-        (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 0),
-    ]
-    cursor.executemany('''
-    INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', monsters)
+    # # Example monster entries
+    # monsters = [
+    #     (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 0),
+    #     (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 0),
+    # ]
+    # cursor.executemany('''
+    # INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
+    # VALUES (?, ?, ?, ?, ?, ?, ?)
+    # ''', monsters)
 
     # Create the player_stats table
     cursor.execute('''
@@ -177,9 +193,68 @@ def initialize_database():
     conn.commit()
     conn.close()
 
+def generate_monsters():
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM rooms")
+    num_rooms = cursor.fetchone()[0]
+    print(num_rooms)
+
+    prompt_text = (
+                    f"You are a dungeon master generating a list of monsters for a immersive text adventure game. "
+                    f"The game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    f"forgotten tombs, tunnels, and the like."
+                    f"The monster descriptions should be a mix of more common adventure game monsters, and new ones specifically"
+                    f"crafted for the setting.  The descriptions should be palpable and vivid, but 150 characters or less.",
+                    f"room_id should range from 2 to {num_rooms}."
+                    f"Not every room needs a monster. Monster hp ranges from 5-100, and monster attack ranges from 1-10."
+                    f"Do not generate numbers outside of the appropriate ranges."
+                    f"The output should be in JSON format."
+                )
+    
+    prompt = {
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+            "role": "system",
+                "content": "You are a dungeon master generating a list of monsters for a immersive text adventure game.",
+            },
+            {
+                "role": "user",
+                "content": prompt_text[0],
+            },
+        ],
+    }
+
+    client = get_client()
+
+    # Call OpenAI to generate room details
+    completion = client.beta.chat.completions.parse(**prompt, response_format=MonstersInfo)
+    monster_list = completion.choices[0].message.parsed
+
+
+    available_rooms = set(range(2, num_rooms + 1))
+    for monster in monster_list.monsters:
+        print(monster)
+        room_id = random.choice(list(available_rooms))
+        available_rooms.discard(room_id)
+        hp = min(monster.hp, 100)
+        attack = min(monster.attack, 10)
+        cursor.execute('''
+        INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (monster.id, monster.name, monster.description, room_id, hp, attack, 0))
+        
+    conn.commit()
+    conn.close()
+
 if st.session_state.first_run:
     st.session_state.first_run = False
-    initialize_database()
+    with st.spinner('Initializing game...'):
+        initialize_database()
+        generate_monsters()
 
 # %% Get room description function
 def get_room_description(room_id):
@@ -248,11 +323,6 @@ def get_room_description(room_id):
 
     conn.close()
     return "Room not found!", [], []
-
-@st.cache_resource
-def get_client():
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    return client
 
 @st.cache_data
 def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters, monsters):
