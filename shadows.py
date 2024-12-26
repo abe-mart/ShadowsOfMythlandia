@@ -98,16 +98,7 @@ class DungeonRoomInfo(BaseModel):
     current_room: RoomDetails
     neighbors: List[RoomDetails]
 
-class MonsterInfo(BaseModel):
-        id: int
-        name: str
-        description: str
-        room_id: int
-        hp: int
-        attack: int
 
-class MonstersInfo(BaseModel):
-    monsters: List[MonsterInfo]
 
 @st.cache_resource
 def get_client():
@@ -154,6 +145,7 @@ def initialize_database():
         name TEXT NOT NULL,
         description TEXT NOT NULL,
         room_id INTEGER NOT NULL,
+        full_hp INTEGER DEFAULT 10,
         hp INTEGER DEFAULT 10,
         attack INTEGER DEFAULT 3,
         defeated BOOLEAN DEFAULT 0,
@@ -193,6 +185,17 @@ def initialize_database():
     conn.commit()
     conn.close()
 
+class MonsterInfo(BaseModel):
+        id: int
+        name: str
+        description: str
+        room_id: int
+        hp: int
+        attack: int
+
+class MonstersInfo(BaseModel):
+    monsters: List[MonsterInfo]
+
 def generate_monsters():
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
@@ -226,6 +229,7 @@ def generate_monsters():
                 "content": prompt_text[0],
             },
         ],
+        "max_tokens": 1000
     }
 
     client = get_client()
@@ -243,9 +247,9 @@ def generate_monsters():
         hp = min(monster.hp, 100)
         attack = min(monster.attack, 10)
         cursor.execute('''
-        INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (monster.id, monster.name, monster.description, room_id, hp, attack, 0))
+        INSERT OR IGNORE INTO monsters (id, name, description, room_id, full_hp, hp, attack, defeated) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (monster.id, monster.name, monster.description, room_id, hp, hp, attack, 0))
         
     conn.commit()
     conn.close()
@@ -339,7 +343,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
     neighbors = cursor.fetchall()
 
     # Query monsters in the current room
-    cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (room_id,))
+    cursor.execute("SELECT name, description, hp, defeated, attack, description FROM monsters WHERE room_id = ?", (room_id,))
     current_room_monsters = cursor.fetchall()
 
     # Query monster states
@@ -349,7 +353,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
     # Query monsters in neighboring rooms
     neighbor_monsters = []
     for neighbor_id in neighbor_ids:
-        cursor.execute("SELECT name, description, hp, defeated FROM monsters WHERE room_id = ?", (neighbor_id,))
+        cursor.execute("SELECT name, description, hp, defeated, attack, description FROM monsters WHERE room_id = ?", (neighbor_id,))
         neighbor_monsters.extend(cursor.fetchall())
 
     # Format current room and neighbors for the AI prompt
@@ -360,19 +364,19 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
 
     # Format monsters for the AI prompt
     current_room_monsters_for_ai = [
-        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3], "attack": r[4], "description": r[5]}
         for r in current_room_monsters
     ]
     alive_monsters_for_ai = [
-        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3], "attack": r[4], "description": r[5]}
         for r in alive_monsters
     ]
     defeated_monsters_for_ai = [
-        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3], "attack": r[4], "description": r[5]}
         for r in defeated_monsters
     ]
     neighbor_monsters_for_ai = [
-        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3]}
+        {"name": r[0], "description": r[1], "hp": r[2], "defeated": r[3], "attack": r[4], "description": r[5]}
         for r in neighbor_monsters
     ]
 
@@ -419,6 +423,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
                 "content": prompt_text,
             },
         ],
+        "max_tokens": 500
     }
 
     client = get_client()
@@ -445,7 +450,62 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
 
     return details.current_room.name, details.current_room.description
 
+def generate_battle_descriptions(room_id, player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name):
 
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    # Fetch room name and description for the given room_id
+    cursor.execute("SELECT name, description FROM rooms WHERE id = ?", (room_id,))
+    room_data = cursor.fetchone()
+    conn.close()
+
+    if room_data:
+        room_name, room_description = room_data
+    else:
+        room_name, room_description = None, None
+
+
+    prompt_text = (
+                    f"You are a dungeon master describing a battle move in an immersive text adventure game. "
+                    f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    f"forgotten tombs, tunnels, and the like."
+                    f"The player is attacking a monster, which is also attacking the player.  Please use the following information to describe the interchange:"
+                    f"The room name is: {room_name}"
+                    f"The room description is: {room_description}"
+                    f"The monster name is: {monster_name}"
+                    f"The player hp percentage is: {player_hp_percent}"
+                    f"The player attack percentage is: {player_attack_percent}"
+                    f"The monster hp percentage is: {monster_hp_percent}"
+                    f"The monster attack percentage is: {monster_attack_percent}"
+                    f"Please keep the description to 150 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
+                    f"The descriptions of the battle should reflect the above player and monster stats."
+                    f"Don't offer choices, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                )
+    
+    prompt = {
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+            "role": "system",
+                "content": "You are a dungeon master describing a battle in an immersive text adventure game.  The user will supply the details of the situation, your job is to describe the action given the information.",
+            },
+            {
+                "role": "user",
+                "content": prompt_text,
+            },
+        ],
+        "max_tokens": 200
+    }
+
+    client = get_client()
+
+    # Call OpenAI to generate room details
+    completion = client.chat.completions.create(**prompt)
+    battle_desc = completion.choices[0].message.content
+    return battle_desc
 
 # %% Display current room
 text, dirlist, codelist = get_room_description(st.session_state.current_room_id)
@@ -462,15 +522,16 @@ conn.close()
 
 # Define the battle dialog
 @st.dialog("Battle Time!")
-def battle_dialog(monster_id):
+def battle_dialog(monster_id,room_id):
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
-    cursor.execute("SELECT name, hp, attack FROM monsters WHERE id = ?", (monster_id,))
+    cursor.execute("SELECT name, full_hp, hp, attack FROM monsters WHERE id = ?", (monster_id,))
     monster_info = cursor.fetchone()
     if monster_info:
-        monster_name, monster_hp, monster_attack = monster_info
+        monster_name, monster_full_hp, monster_hp, monster_attack = monster_info
     else:
         monster_name = ""
+        monster_full_hp = 0
         monster_hp = 0
         monster_attack = 0
 
@@ -490,11 +551,18 @@ def battle_dialog(monster_id):
     # Battle options
     col1, col2, col3 = st.columns(3)
     if col1.button("Attack"):
-        damage = max(1, player_attack - monster_attack // 2)  # Simple damage formula
+        damage = random.randrange(player_attack-monster_attack, player_attack)  # Simple damage formula
         monster_hp -= damage
-        st.warning(f"You dealt {damage} damage to {monster_name}!")
-
+        
         if monster_hp <= 0:
+            player_hp_percent = (player_hp / 100) * 100
+            monster_hp_percent = monster_hp / monster_full_hp * 100
+            player_attack_percent = damage / player_attack * 100
+            monster_attack_percent = 0
+            with st.spinner('Attacking!'):
+                desc = generate_battle_descriptions(room_id,player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name)
+            st.write(desc)
+            st.warning(f"You dealt {damage} damage to the {monster_name}!")
             st.success(f"You defeated the {monster_name}!")
             conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
             cursor = conn.cursor()
@@ -504,8 +572,16 @@ def battle_dialog(monster_id):
             st.rerun()
         else:
             # Monster attacks back
-            monster_damage = max(1, monster_attack - player_defense)
+            monster_damage = random.randrange(1,monster_attack-player_defense)
             player_hp -= monster_damage
+            player_hp_percent = (player_hp / 100) * 100
+            monster_hp_percent = monster_hp / monster_full_hp * 100
+            player_attack_percent = damage / player_attack * 100
+            monster_attack_percent = monster_damage / monster_attack * 100
+            with st.spinner('Attacking!'):
+                desc = generate_battle_descriptions(room_id,player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name)
+            st.write(desc)
+            st.warning(f"You dealt {damage} damage to the {monster_name}!")
             st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
             with hp_placeholder.container():
                 st.write(f"**HP:** {monster_hp} | **Attack:** {monster_attack}")
@@ -530,7 +606,7 @@ if monster:
     # Battle controls
     col1, col2, col3 = st.columns(3)
     if col1.button("Fight!"):
-        battle_dialog(monster_id)
+        battle_dialog(monster_id,st.session_state.current_room_id)
     if col2.button("Flee"):
         st.session_state.current_room_id = st.session_state.previous_room_id
         st.rerun()
@@ -539,7 +615,7 @@ else:
     st.write("### Choose a direction:")
     cols = st.columns(len(dirlist) or 1)
     for i, d in enumerate(dirlist):
-        if cols[i].button(d):
+        if cols[i].button(d, key=i):
             st.session_state.previous_room_id = st.session_state.current_room_id
             st.session_state.current_room_id = codelist[i]
             st.rerun()  # Refresh the app with the new room
