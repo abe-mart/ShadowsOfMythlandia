@@ -153,15 +153,17 @@ def initialize_database():
     )
     ''')
 
-    # # Example monster entries
-    # monsters = [
-    #     (1, "Goblin", "A small, green creature with sharp teeth.", 2, 10, 3, 0),
-    #     (2, "Skeleton Warrior", "A clattering skeleton armed with a rusty sword.", 3, 15, 5, 0),
-    # ]
-    # cursor.executemany('''
-    # INSERT OR IGNORE INTO monsters (id, name, description, room_id, hp, attack, defeated) 
-    # VALUES (?, ?, ?, ?, ?, ?, ?)
-    # ''', monsters)
+    # Create the items table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL,
+            is_sword BOOLEAN DEFAULT 0,
+            room_id INTEGER,
+            FOREIGN KEY (room_id) REFERENCES rooms (id)
+    )
+    ''')
 
     # Create the player_stats table
     cursor.execute('''
@@ -181,6 +183,15 @@ def initialize_database():
         INSERT INTO player_stats (id, name, hp, attack, defense) 
         VALUES (1, 'Hero', 100, 10, 5)
         ''')
+
+    # Create the player_inventory table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS player_inventory (
+        id INTEGER PRIMARY KEY,
+        item_id INTEGER,
+        FOREIGN KEY (item_id) REFERENCES items (id)
+    )
+    ''')
 
     conn.commit()
     conn.close()
@@ -234,7 +245,7 @@ def generate_monsters():
 
     client = get_client()
 
-    # Call OpenAI to generate room details
+    # Call OpenAI to generate monsters
     completion = client.beta.chat.completions.parse(**prompt, response_format=MonstersInfo)
     monster_list = completion.choices[0].message.parsed
 
@@ -254,11 +265,77 @@ def generate_monsters():
     conn.commit()
     conn.close()
 
+class ItemInfo(BaseModel):
+        name: str
+        description: str
+        is_sword: bool
+
+class ItemsInfo(BaseModel):
+    items: List[ItemInfo]
+
+def generate_items():
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM rooms")
+    num_rooms = cursor.fetchone()[0]
+    print(num_rooms)
+
+    prompt_text = (
+                    f"You are a dungeon master generating a list of items and treasures for an immersive text adventure game. "
+                    f"The game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    f"forgotten tombs, tunnels, and the like."
+                    f"The item descriptions should be a mix of more common adventure game items, and new ones specifically"
+                    f"crafted for the setting.  Most items should be swords of various types.  The descriptions should be palpable and vivid, but 150 characters or less.",
+                    f"Generate between {num_rooms/2} to {num_rooms} items."
+                    f"For most of the items, is_sword should be True."
+                    f"The output should be in JSON format."
+                )
+    
+    prompt = {
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+            "role": "system",
+                "content": "You are a dungeon master generating a list of items for a immersive text adventure game.",
+            },
+            {
+                "role": "user",
+                "content": prompt_text[0],
+            },
+        ],
+        "max_tokens": 1000
+    }
+
+    client = get_client()
+
+    # Call OpenAI to generate monsters
+    completion = client.beta.chat.completions.parse(**prompt, response_format=ItemsInfo)
+    item_list = completion.choices[0].message.parsed
+
+
+    available_rooms = set(range(2, num_rooms + 1))
+    for idx, item in enumerate(item_list.items):
+        print(item)
+        room_id = random.choice(list(available_rooms))
+        available_rooms.discard(room_id)
+        cursor.execute('''
+        INSERT OR IGNORE INTO items (id, name, description, is_sword, room_id) 
+        VALUES (?, ?, ?, ?, ?)
+        ''', (idx, item.name, item.description, item.is_sword, room_id))
+        
+    conn.commit()
+    conn.close()
+
 if st.session_state.first_run:
     st.session_state.first_run = False
-    with st.spinner('Initializing game...'):
+    with st.spinner('Initializing Game...'):
         initialize_database()
+    with st.spinner('Recruiting Monsters...'):
         generate_monsters()
+    with st.spinner('Hiding Loot...'):
+        generate_items()
 
 # %% Get room description function
 def get_room_description(room_id):
@@ -479,7 +556,7 @@ def generate_battle_descriptions(room_id, player_hp_percent,player_attack_percen
                     f"The player attack percentage is: {player_attack_percent}"
                     f"The monster hp percentage is: {monster_hp_percent}"
                     f"The monster attack percentage is: {monster_attack_percent}"
-                    f"Please keep the description to 150 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
+                    f"Please keep the description to 200 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
                     f"The descriptions of the battle should reflect the above player and monster stats."
                     f"Don't offer choices, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
                 )
