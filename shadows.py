@@ -619,6 +619,8 @@ else:
             st.session_state.previous_room_id = st.session_state.current_room_id
             st.session_state.current_room_id = codelist[i]
             st.rerun()  # Refresh the app with the new room
+    if st.button("FORGE", type="primary",key='forge', use_container_width=True):
+        st.write('FORGING')
 
 # Action Buttons
 # st.write("### Actions:")
