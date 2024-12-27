@@ -5,6 +5,7 @@ import random
 from openai import OpenAI
 from pydantic import BaseModel
 from typing import List
+from types import SimpleNamespace
 
 from visualization import build_dungeon_graph, visualize_dungeon_plotly, compute_dungeon_layout, compute_pos, visualize_dungeon_plotly, fetch_dungeon_data
 
@@ -17,6 +18,8 @@ if "first_run" not in st.session_state:
     st.session_state.first_run = True
 if "previous_room_id" not in st.session_state:
     st.session_state.previous_room_id = None
+if "searching" not in st.session_state:
+        st.session_state.searching = False
 
 
 # Hide menu in production
@@ -161,6 +164,7 @@ def initialize_database():
             description TEXT NOT NULL,
             is_sword BOOLEAN DEFAULT 0,
             room_id INTEGER,
+            is_claimed BOOLEAN DEFAULT 0,
             FOREIGN KEY (room_id) REFERENCES rooms (id)
     )
     ''')
@@ -222,7 +226,8 @@ def generate_monsters():
                     f"The monster descriptions should be a mix of more common adventure game monsters, and new ones specifically"
                     f"crafted for the setting.  The descriptions should be palpable and vivid, but 150 characters or less.",
                     f"room_id should range from 2 to {num_rooms}."
-                    f"Not every room needs a monster. Monster hp ranges from 5-100, and monster attack ranges from 1-10."
+                    f"Not every room needs a monster. Monster hp ranges from 5-10, and monster attack ranges from 1-10."
+                    f"Make sure to include a good mix of easier and more difficult monsters."
                     f"Do not generate numbers outside of the appropriate ranges."
                     f"The output should be in JSON format."
                 )
@@ -321,9 +326,9 @@ def generate_items():
         room_id = random.choice(list(available_rooms))
         available_rooms.discard(room_id)
         cursor.execute('''
-        INSERT OR IGNORE INTO items (id, name, description, is_sword, room_id) 
-        VALUES (?, ?, ?, ?, ?)
-        ''', (idx, item.name, item.description, item.is_sword, room_id))
+        INSERT OR IGNORE INTO items (id, name, description, is_sword, room_id, is_claimed) 
+        VALUES (?, ?, ?, ?, ?, ?)
+        ''', (idx, item.name, item.description, item.is_sword, room_id, 0))
         
     conn.commit()
     conn.close()
@@ -492,6 +497,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
                     "from the surrounding rooms and the monsters within them to create a sense of surroundings."
                     "When there is a monster present, make sure to focus the description on the monster, and make it clear that it's there."
                     "Remember that not every room has to be an iconic location, sometimes there are just passageways or tunnels."
+                    "Make sure to replace any Unknown or Undescribed rooms with real names and descriptions."
                     "Keep responses to 500 characters or less"
                 ),
             },
@@ -527,7 +533,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
 
     return details.current_room.name, details.current_room.description
 
-def generate_battle_descriptions(room_id, player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name):
+def generate_battle_descriptions(room_id, battle_stats, monster_name, item):
 
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
@@ -542,6 +548,10 @@ def generate_battle_descriptions(room_id, player_hp_percent,player_attack_percen
     else:
         room_name, room_description = None, None
 
+    player_hp_percent = (battle_stats.player_ending_hp / battle_stats.player_full_hp) * 100
+    monster_hp_percent = battle_stats.monster_ending_hp / battle_stats.monster_full_hp * 100
+    player_attack_percent = battle_stats.player_damage / battle_stats.player_attack * 100
+    monster_attack_percent = battle_stats.monster_damage / battle_stats.monster_attack * 100
 
     prompt_text = (
                     f"You are a dungeon master describing a battle move in an immersive text adventure game. "
@@ -552,14 +562,28 @@ def generate_battle_descriptions(room_id, player_hp_percent,player_attack_percen
                     f"The room name is: {room_name}"
                     f"The room description is: {room_description}"
                     f"The monster name is: {monster_name}"
+                    f"The player starting hp was: {battle_stats.player_starting_hp}"
+                    f"The player ending hp is: {battle_stats.player_ending_hp}"
                     f"The player hp percentage is: {player_hp_percent}"
                     f"The player attack percentage is: {player_attack_percent}"
+                    f"The monster starting hp was: {battle_stats.monster_starting_hp}"
+                    f"The monster ending hp is: {battle_stats.monster_ending_hp}"
                     f"The monster hp percentage is: {monster_hp_percent}"
                     f"The monster attack percentage is: {monster_attack_percent}"
+                    f"The monster was defeated: {battle_stats.monster_defeated}"
+                    f"The player was defeated: {battle_stats.player_defeated}"
                     f"Please keep the description to 200 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
                     f"The descriptions of the battle should reflect the above player and monster stats."
-                    f"Don't offer choices, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                    f"For example, a player_attack_percent of 0 would mean the player missed or was blocked.  A low attack percent from either would mean a weak or glancing blow."
+                    f"Attack percentages refer to the strength of the current attack compared to the maximum possible attack."
+                    f"Hp percentages refer to the current hp compared to the maximum possible hp."
+                    f"Don't offer choices, or mention numbers, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
                 )
+    
+    if item.get_item and item.is_item:
+        prompt_text = prompt_text + (
+            f"After defeating the monster, the player searches the room and finds {item.name}.  The description of the item is: {item.description}"
+        )
     
     prompt = {
         # "model": "gpt-4o-2024-08-06",
@@ -598,7 +622,7 @@ monster = cursor.fetchone()
 conn.close()
 
 # Define the battle dialog
-@st.dialog("Battle Time!")
+@st.dialog("Battle!")
 def battle_dialog(monster_id,room_id):
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
@@ -617,75 +641,153 @@ def battle_dialog(monster_id,room_id):
     player_hp, player_attack, player_defense = cursor.fetchone()
     conn.close()
 
+    # Fetch item details
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, description FROM items WHERE room_id = ?", (room_id,))
+    item_info = cursor.fetchone()
+    if item_info:
+        item_id, item_name, item_desc = item_info
+        is_item = True
+    else:
+        item_name = ""
+        item_desc = ""
+        item_id = 0
+        is_item = False
+    item = SimpleNamespace()
+    item.name = item_name
+    item.description = item_desc
+    item.get_item = False
+    item.id = item_id
+    item.is_item = is_item
+
+    # Build battle stats
+    battle_stats = SimpleNamespace()
+    battle_stats.player_full_hp = 100
+    battle_stats.player_starting_hp = player_hp
+    battle_stats.player_attack = player_attack
+    battle_stats.monster_full_hp = monster_full_hp
+    battle_stats.monster_starting_hp = monster_hp
+    battle_stats.monster_attack = monster_attack
+
     st.write(f"### A {monster_name} appears!")
 
     hp_placeholder = st.empty()
 
     with hp_placeholder.container():
-        st.write(f"**HP:** {monster_hp} | **Attack:** {monster_attack}")
-        st.write(f"**Your HP:** {player_hp} | **Your Attack:** {player_attack}")
+        c1, c2 = st.columns(2,border=True)
+        with c1:
+            st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+        with c2:
+            st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
 
     # Battle options
-    col1, col2, col3 = st.columns(3)
-    if col1.button("Attack"):
-        damage = random.randrange(player_attack-monster_attack, player_attack)  # Simple damage formula
-        monster_hp -= damage
-        
-        if monster_hp <= 0:
-            player_hp_percent = (player_hp / 100) * 100
-            monster_hp_percent = monster_hp / monster_full_hp * 100
-            player_attack_percent = damage / player_attack * 100
-            monster_attack_percent = 0
-            with st.spinner('Attacking!'):
-                desc = generate_battle_descriptions(room_id,player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name)
-            st.write(desc)
-            st.warning(f"You dealt {damage} damage to the {monster_name}!")
-            st.success(f"You defeated the {monster_name}!")
-            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-            cursor = conn.cursor()
-            cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
-            conn.commit()
-            conn.close()
-            st.rerun()
-        else:
-            # Monster attacks back
-            monster_damage = random.randrange(1,monster_attack-player_defense)
-            player_hp -= monster_damage
-            player_hp_percent = (player_hp / 100) * 100
-            monster_hp_percent = monster_hp / monster_full_hp * 100
-            player_attack_percent = damage / player_attack * 100
-            monster_attack_percent = monster_damage / monster_attack * 100
-            with st.spinner('Attacking!'):
-                desc = generate_battle_descriptions(room_id,player_hp_percent,player_attack_percent,monster_hp_percent,monster_attack_percent,monster_name)
-            st.write(desc)
-            st.warning(f"You dealt {damage} damage to the {monster_name}!")
-            st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
-            with hp_placeholder.container():
-                st.write(f"**HP:** {monster_hp} | **Attack:** {monster_attack}")
-                st.write(f"**Your HP:** {player_hp} | **Your Attack:** {player_attack}")
-            if player_hp <= 0:
-                st.error("You have been defeated! Game Over.")
-                st.stop()
-            else:
+    if monster_hp > 0:
+        col1, col2, col3 = st.columns(3)
+        if col1.button("Attack"):
+            damage = random.randrange(player_attack-monster_attack, player_attack)  # Simple damage formula
+            monster_hp -= damage
+            
+            if monster_hp <= 0:
+                monster_hp = 0
+                with st.spinner('Attacking!'):
+                    battle_stats.monster_damage = 0
+                    battle_stats.player_damage = damage
+                    battle_stats.player_ending_hp = player_hp
+                    battle_stats.monster_ending_hp = 0
+                    battle_stats.monster_defeated = True
+                    battle_stats.player_defeated = False
+                    item.get_item = True
+                    desc = generate_battle_descriptions(room_id,battle_stats,monster_name,item)
+                st.write(desc)
+                st.warning(f"You dealt {damage} damage to the {monster_name}!")
+                st.success(f"You defeated the {monster_name}!")
                 conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
                 cursor = conn.cursor()
-                cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
-                cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
+                cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
+                if item.is_item:
+                    cursor.execute("INSERT INTO player_inventory (id, item_id) VALUES (NULL, ?)", (item.id,))
+                    cursor.execute("UPDATE items SET is_claimed = 1 WHERE id = ?", (item.id,))
+                    st.success(f"You have obtained the item: {item.name}!")
+                    if st.button("Return"):
+                        st.rerun()
+
                 conn.commit()
                 conn.close()
+                
+                with hp_placeholder.container():
+                    c1, c2 = st.columns(2,border=True)
+                    with c1:
+                        st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                    with c2:
+                        st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+            else:
+                # Monster attacks back
+                monster_damage = random.randrange(1,monster_attack-player_defense)
+                player_hp -= monster_damage
+                with st.spinner('Attacking!'):
+                    battle_stats.monster_damage = monster_damage
+                    battle_stats.player_damage = damage
+                    battle_stats.player_ending_hp = player_hp
+                    battle_stats.monster_ending_hp = monster_hp
+                    battle_stats.monster_defeated = False
+                    if player_hp <= 0:
+                        battle_stats.player_defeated = True
+                    else:
+                        battle_stats.player_defeated = False
+                    desc = generate_battle_descriptions(room_id,battle_stats,monster_name,item)
+                st.write(desc)
+                st.warning(f"You dealt {damage} damage to the {monster_name}!")
+                st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
+                with hp_placeholder.container():
+                    c1, c2 = st.columns(2,border=True)
+                    with c1:
+                        st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                    with c2:
+                        st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+                if player_hp <= 0:
+                    st.error("You have been defeated! Game Over.")
+                    st.stop()
+                else:
+                    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
+                    cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
+                    conn.commit()
+                    conn.close()
 
-    if col2.button("Defend"):
-        st.info("You brace yourself and defend against the attack!")
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM player_inventory")
+        item_count = cursor.fetchone()[0]
+        conn.close()
+
+        if item_count > 0:
+            if col2.button("Use Item"):
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("SELECT item_id FROM player_inventory ORDER BY RANDOM() LIMIT 1")
+                item_id = cursor.fetchone()[0]
+                cursor.execute("SELECT * FROM items WHERE id = ?", (item_id,))
+                item = cursor.fetchone()
+                item = ItemInfo(*item)
+                conn.close()
+
+    # if col2.button("Defend"):
+    #     st.info("You brace yourself and defend against the attack!")
 
 if monster:
     monster_id, monster_name, monster_hp, monster_attack = monster
 
-    # Battle controls
-    col1, col2, col3 = st.columns(3)
-    if col1.button("Fight!"):
-        battle_dialog(monster_id,st.session_state.current_room_id)
-    if col2.button("Flee"):
-        st.session_state.current_room_id = st.session_state.previous_room_id
+    if monster_hp > 0:
+        # Battle controls
+        col1, col2, col3 = st.columns(3)
+        if col1.button("Fight!"):
+            battle_dialog(monster_id,st.session_state.current_room_id)
+        if col2.button("Flee"):
+            st.session_state.current_room_id = st.session_state.previous_room_id
+            st.rerun()
+    else:
         st.rerun()
 else:
     # Direction Buttons
