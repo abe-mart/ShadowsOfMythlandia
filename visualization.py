@@ -172,3 +172,14 @@ def visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, current
 
     fig = go.Figure(data=traces, layout=layout)
     return fig
+
+def build_dungeon_map():
+    data = fetch_dungeon_data()
+    G, pos = compute_dungeon_layout(data)
+    datasub = [(row[0], row[2]) for row in data]
+    pos = compute_pos(datasub)
+    G_filtered, visited_nodes, unvisited_neighbors = build_dungeon_graph(data, st.session_state.current_room_id)
+
+    fig = visualize_dungeon_plotly(G, pos, visited_nodes, unvisited_neighbors, st.session_state.current_room_id)
+    fig.update_layout(showlegend=False)
+    st.plotly_chart(fig, config = {'displayModeBar': False})

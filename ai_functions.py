@@ -8,7 +8,7 @@ def get_client():
 
 def chat_prompt_json(prompt_text, system_prompt, max_tokens, json_type):
     prompt = {
-        "model": "gpt-4o-mini",
+        "model": "gpt-4o",
         "messages": [
             {
             "role": "system",
