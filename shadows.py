@@ -1375,3 +1375,32 @@ with cols[1]:
 with cols[2]:
     st.image('Images/badge3.jpeg')
 # %%
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+st.write('#')
+
+def reset_game():
+    # Delete the database
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("DROP TABLE IF EXISTS player_inventory")
+    cursor.execute("DROP TABLE IF EXISTS player_stats")
+    cursor.execute("DROP TABLE IF EXISTS monsters")
+    cursor.execute("DROP TABLE IF EXISTS items")
+    cursor.execute("DROP TABLE IF EXISTS rooms")
+    conn.commit()
+    conn.close()
+    
+    # Rerun the app
+    st.session_state.clear()
+    st.rerun()
+
+if st.button("Reset Game", use_container_width=True):
+    reset_game()
+
