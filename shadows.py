@@ -132,9 +132,9 @@ def initialize_database():
     ''')
 
     # Generate 25 rooms with a random layout
-    num_rooms = 25
-    main_cycle_size = 10
-    num_subcycles = 3
+    num_rooms = 30
+    main_cycle_size = 15
+    num_subcycles = 4
     subcycle_size_range = (3, 5)
     rooms = generate_dungeon_with_cycles(num_rooms, main_cycle_size, num_subcycles, subcycle_size_range)
 
@@ -231,11 +231,10 @@ def generate_monsters():
                     f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
                     f"forgotten tombs, tunnels, and the like."
                     f"The monster descriptions should be a mix of more common adventure game monsters, and new ones specifically"
-                    f"crafted for the setting.  The descriptions should be palpable and vivid, but 150 characters or less.",
+                    f"crafted for the setting.  The descriptions should be palpable and vivid, but each should be 150 characters or less."
                     f"room_id should range from 2 to {num_rooms}."
-                    f"Make sure to generate at least {round(num_rooms*0.75)} monsters."
-                    f"Not every room needs a monster. Monster hp ranges from 5 to 100, and monster attack ranges from 1 to 10."
-                    f"Make sure to include a good mix of easier and more difficult monsters."
+                    f"Make sure to generate a list of at least {num_rooms} monsters."
+                    f"Not every room needs a monster. Monster hp ranges from 5 to 50, and monster attack ranges from 1 to 10."
                     f"Do not generate numbers outside of the appropriate ranges."
                     f"Higher level monsters should be increasingly rare compared to lower level monsters."
                     f"The output should be in JSON format."
@@ -254,7 +253,7 @@ def generate_monsters():
                 "content": prompt_text[0],
             },
         ],
-        "max_tokens": 3000
+        "max_tokens": 4000
     }
 
     client = get_client()
@@ -264,7 +263,8 @@ def generate_monsters():
     monster_list = completion.choices[0].message.parsed
 
 
-    available_rooms = set(range(2, num_rooms + 1))
+    cursor.execute("SELECT id FROM rooms WHERE id NOT IN (SELECT room_id FROM monsters)")
+    available_rooms = set(room[0] for room in cursor.fetchall())
     for monster in monster_list.monsters:
         print(monster)
         room_id = random.choice(list(available_rooms))
@@ -273,8 +273,8 @@ def generate_monsters():
         attack = min(monster.attack, 10)
         cursor.execute('''
         INSERT OR IGNORE INTO monsters (id, name, description, room_id, full_hp, hp, attack, defeated) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (monster.id, monster.name, monster.description, room_id, hp, hp, attack, 0))
+        VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)
+        ''', (monster.name, monster.description, room_id, hp, hp, attack, 0))
         
     conn.commit()
     conn.close()
@@ -301,7 +301,7 @@ def generate_items():
                     f"forgotten tombs, tunnels, and the like."
                     f"The item descriptions should be a mix of more common adventure game items, and new ones specifically"
                     f"crafted for the setting.  Most items should be swords of various types.  The descriptions should be palpable and vivid, but 150 characters or less.",
-                    f"Generate between {num_rooms/2} to {num_rooms} items."
+                    f"Generate a list of at least {num_rooms} items."
                     f"For many of the items, is_sword should be True."
                     f"The output should be in JSON format."
                 )
@@ -319,7 +319,7 @@ def generate_items():
                 "content": prompt_text[0],
             },
         ],
-        "max_tokens": 2500
+        "max_tokens": 4000
     }
 
     client = get_client()
@@ -329,15 +329,17 @@ def generate_items():
     item_list = completion.choices[0].message.parsed
 
 
-    available_rooms = set(range(2, num_rooms + 1))
+    cursor.execute("SELECT id FROM rooms WHERE id NOT IN (SELECT room_id FROM items)")
+    available_rooms = set(room[0] for room in cursor.fetchall())
     for idx, item in enumerate(item_list.items):
         print(item)
-        room_id = random.choice(list(available_rooms))
-        available_rooms.discard(room_id)
-        cursor.execute('''
-        INSERT OR IGNORE INTO items (id, name, description, is_sword, room_id, is_claimed) 
-        VALUES (?, ?, ?, ?, ?, ?)
-        ''', (idx, item.name, item.description, item.is_sword, room_id, 0))
+        if len(available_rooms) > 0:
+            room_id = random.choice(list(available_rooms))
+            available_rooms.discard(room_id)
+            cursor.execute('''
+            INSERT OR IGNORE INTO items (id, name, description, is_sword, room_id, is_claimed) 
+            VALUES (NULL, ?, ?, ?, ?, ?)
+            ''', (item.name, item.description, item.is_sword, room_id, 0))
         
     conn.commit()
     conn.close()
@@ -413,9 +415,64 @@ if st.session_state.first_run:
     with st.spinner('Initializing Game...'):
         initialize_database()
     with st.spinner('Recruiting Monsters...'):
-        generate_monsters()
+        max_iterations = 5
+        iteration = 0
+        
+        while iteration < max_iterations:
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM rooms")
+            total_rooms = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM monsters")
+            total_monsters = cursor.fetchone()[0]
+            conn.close()
+            
+            if total_monsters >= total_rooms * 0.75:
+                break
+            
+            with st.spinner('Recruiting More Monsters...'):
+                generate_monsters()
+            
+            iteration += 1
+        
+        if iteration == max_iterations:
+            pass
+        # remove monsters from starting room
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM monsters WHERE room_id = 1")
+        conn.commit()
+        conn.close()
     with st.spinner('Hiding Loot...'):
-        generate_items()
+        max_iterations = 5
+        iteration = 0
+        
+        while iteration < max_iterations:
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM items")
+            total_items = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM rooms")
+            total_rooms = cursor.fetchone()[0]
+            conn.close()
+            
+            if total_items >= total_rooms * 0.75:
+                break
+            
+            with st.spinner('Hiding More Loot...'):
+                generate_items()
+            
+            iteration += 1
+        
+        if iteration == max_iterations:
+            pass
+
+        # remove items from starting room
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM items WHERE room_id = 1")
+        conn.commit()
+        conn.close()
 
 # %% Get room description function
 def get_room_description(room_id):
@@ -550,6 +607,23 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
         "{'current_room': {'id': '', 'name': '', 'description': ''}, "
         "'neighbors': [{'id': '', 'name': '', 'description': ''}, ...], "\
     )
+
+    # Run this block only if there are no monsters in the current room
+    if not current_room_monsters:
+        # Query unclaimed items in the current room
+        cursor.execute("SELECT id, name, description FROM items WHERE room_id = ? AND is_claimed = 0", (room_id,))
+        unclaimed_items = cursor.fetchall()
+
+        if unclaimed_items:
+            for item in unclaimed_items:
+                item_id, item_name, item_description = item
+                # You can process the unclaimed items as needed, e.g., add to room description or notify the player
+                prompt_text = prompt_text + f"  The player also searches the room and finds {item_name}.  The description of the item is: {item_description}"
+                st.success(f"You found the {item_name} - {item_description}")
+                cursor.execute("INSERT INTO player_inventory (id, item_id) VALUES (NULL, ?)", (item_id,))
+                cursor.execute("UPDATE items SET is_claimed = 1 WHERE id = ?", (item_id,))
+                conn.commit()
+
 
     # print(prompt_text)
 
@@ -784,6 +858,33 @@ hp_placeholder = st.empty()
 
 text_placeholder = st.empty()  # Main game text display
 text = ""
+
+def check_all_rooms_visited_and_monsters_defeated():
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    # Check if all rooms have been visited
+    cursor.execute("SELECT COUNT(*) FROM rooms WHERE visited = 0")
+    unvisited_rooms_count = cursor.fetchone()[0]
+
+    # Check if all monsters have been defeated
+    cursor.execute("SELECT COUNT(*) FROM monsters WHERE defeated = 0")
+    undefeated_monsters_count = cursor.fetchone()[0]
+
+    conn.close()
+
+    return unvisited_rooms_count == 0 and undefeated_monsters_count == 0
+
+@st.dialog("Victory!")
+def victory_screen():
+    st.image('Images/victory.jpg')
+
+# Usage
+all_rooms_visited_and_monsters_defeated = check_all_rooms_visited_and_monsters_defeated()
+if all_rooms_visited_and_monsters_defeated:
+    print('YOU WIN!')
+    victory_screen()
+
 
 # Check for monsters in the current room
 conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
@@ -1198,6 +1299,8 @@ else:
     # Run away!
     if flee:
         st.session_state.current_room_id = st.session_state.previous_room_id
+        st.session_state.battle_available = False
+        st.session_state.in_battle = False
         st.rerun()
 
 # Check to see if the player has any swords in their inventory
@@ -1221,7 +1324,7 @@ if sword_count > 0:
         cursor.execute("SELECT name, description FROM rooms WHERE id = ?", (st.session_state.current_room_id,))
         room_data = cursor.fetchone()
         cursor.execute("DELETE FROM player_inventory WHERE item_id = ?", (item_id,))
-        cursor.execute("UPDATE player_stats SET num_swords = ?, attack = attack + 1, hp = 100 WHERE id = 1", (n_swords + 1,))
+        cursor.execute("UPDATE player_stats SET num_swords = ?, attack = attack + 5, hp = 100 WHERE id = 1", (n_swords + 1,))
         conn.commit()
         conn.close()
 
@@ -1233,7 +1336,7 @@ if sword_count > 0:
 
 # Update text area
 with text_placeholder:
-    st.text_area("text", value=text, height=170, disabled=True, label_visibility="collapsed")
+    st.text_area("text", value=text, height=200, disabled=True, label_visibility="collapsed")
 
 
 
