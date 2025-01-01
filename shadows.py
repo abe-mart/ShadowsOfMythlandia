@@ -19,7 +19,13 @@ if "first_run" not in st.session_state:
 if "previous_room_id" not in st.session_state:
     st.session_state.previous_room_id = None
 if "searching" not in st.session_state:
-        st.session_state.searching = False
+    st.session_state.searching = False
+if "battle_available" not in st.session_state:
+    st.session_state.battle_available = False
+if "item_available" not in st.session_state:
+    st.session_state.item_available = False
+if "in_battle" not in st.session_state:
+    st.session_state.in_battle = False
 
 
 # Hide menu in production
@@ -127,7 +133,7 @@ def initialize_database():
 
     # Generate 25 rooms with a random layout
     num_rooms = 25
-    main_cycle_size = 12
+    main_cycle_size = 10
     num_subcycles = 3
     subcycle_size_range = (3, 5)
     rooms = generate_dungeon_with_cycles(num_rooms, main_cycle_size, num_subcycles, subcycle_size_range)
@@ -176,7 +182,8 @@ def initialize_database():
         name TEXT NOT NULL DEFAULT 'Hero',
         hp INTEGER DEFAULT 100,
         attack INTEGER DEFAULT 10,
-        defense INTEGER DEFAULT 5
+        defense INTEGER DEFAULT 5,
+        num_swords INTEGER DEFAULT 0
     )
     ''')
 
@@ -184,8 +191,8 @@ def initialize_database():
     cursor.execute("SELECT COUNT(*) FROM player_stats")
     if cursor.fetchone()[0] == 0:
         cursor.execute('''
-        INSERT INTO player_stats (id, name, hp, attack, defense) 
-        VALUES (1, 'Hero', 100, 10, 5)
+        INSERT INTO player_stats (id, name, hp, attack, defense, num_swords) 
+        VALUES (1, 'Hero', 100, 10, 5, 0)
         ''')
 
     # Create the player_inventory table
@@ -226,9 +233,11 @@ def generate_monsters():
                     f"The monster descriptions should be a mix of more common adventure game monsters, and new ones specifically"
                     f"crafted for the setting.  The descriptions should be palpable and vivid, but 150 characters or less.",
                     f"room_id should range from 2 to {num_rooms}."
-                    f"Not every room needs a monster. Monster hp ranges from 5-10, and monster attack ranges from 1-10."
+                    f"Make sure to generate at least {round(num_rooms*0.75)} monsters."
+                    f"Not every room needs a monster. Monster hp ranges from 5 to 100, and monster attack ranges from 1 to 10."
                     f"Make sure to include a good mix of easier and more difficult monsters."
                     f"Do not generate numbers outside of the appropriate ranges."
+                    f"Higher level monsters should be increasingly rare compared to lower level monsters."
                     f"The output should be in JSON format."
                 )
     
@@ -245,7 +254,7 @@ def generate_monsters():
                 "content": prompt_text[0],
             },
         ],
-        "max_tokens": 1000
+        "max_tokens": 3000
     }
 
     client = get_client()
@@ -293,7 +302,7 @@ def generate_items():
                     f"The item descriptions should be a mix of more common adventure game items, and new ones specifically"
                     f"crafted for the setting.  Most items should be swords of various types.  The descriptions should be palpable and vivid, but 150 characters or less.",
                     f"Generate between {num_rooms/2} to {num_rooms} items."
-                    f"For most of the items, is_sword should be True."
+                    f"For many of the items, is_sword should be True."
                     f"The output should be in JSON format."
                 )
     
@@ -310,7 +319,7 @@ def generate_items():
                 "content": prompt_text[0],
             },
         ],
-        "max_tokens": 1000
+        "max_tokens": 2500
     }
 
     client = get_client()
@@ -332,6 +341,72 @@ def generate_items():
         
     conn.commit()
     conn.close()
+
+class ItemEffect(BaseModel):
+        description: str
+        player_hp_effect: int
+        monster_hp_effect: int
+
+def describe_item_effect(room_id, battle_stats, monster_name, item_name, item_description):
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    # Fetch room name and description for the given room_id
+    cursor.execute("SELECT name, description FROM rooms WHERE id = ?", (room_id,))
+    room_data = cursor.fetchone()
+    conn.close()
+
+    if room_data:
+        room_name, room_description = room_data
+    else:
+        room_name, room_description = None, None
+
+    player_hp_percent = (battle_stats.player_starting_hp / battle_stats.player_full_hp) * 100
+    monster_hp_percent = battle_stats.monster_starting_hp / battle_stats.monster_full_hp * 100
+
+    prompt_text = (
+                    f"You are a dungeon master describing a hero using an item in an immersive text adventure game. "
+                    f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    f"forgotten tombs, tunnels, and the like."
+                    f"The player is using an item.  Please use the following information to describe the interchange:"
+                    f"The item name is: {item_name}"
+                    f"The item description is: {item_description}"
+                    f"The room name is: {room_name}"
+                    f"The room description is: {room_description}"
+                    f"The monster name is: {monster_name}"
+                    f"The player hp percentage is: {player_hp_percent}"
+                    f"The monster hp percentage is: {monster_hp_percent}"
+                    f"Please keep the description to 200 characters or less."
+                    f"Use the field player_hp_effect to describe the effect of using the item on the player health, ranging from -50 to +50."
+                    f"Use the field monster_hp_effect to describe the effect of using the item on the monster health, ranging from -50 to +50."
+                    f"Hp percentages refer to the current hp compared to the maximum possible hp."
+                    f"Focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                    f"Output as JSON, with the description in the description field"
+                )
+    
+    prompt = {
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+            "role": "system",
+                "content": "You are a dungeon master describing a player using an item in a battle in an immersive text adventure game.  The user will supply the details of the situation, your job is to describe the action given the information.",
+            },
+            {
+                "role": "user",
+                "content": prompt_text,
+            },
+        ],
+        "max_tokens": 100
+    }
+
+    client = get_client()
+
+    # Call OpenAI to generate room details
+    completion = client.beta.chat.completions.parse(**prompt, response_format=ItemEffect)
+    item_effect_desc = completion.choices[0].message.parsed
+    return item_effect_desc
 
 if st.session_state.first_run:
     st.session_state.first_run = False
@@ -476,7 +551,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
         "'neighbors': [{'id': '', 'name': '', 'description': ''}, ...], "\
     )
 
-    print(prompt_text)
+    # print(prompt_text)
 
     prompt = {
         # "model": "gpt-4o-2024-08-06",
@@ -492,6 +567,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
                     "The game is called Shadows of Mythlandia, and follows a hero delving deep into the "
                     "mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
                     "forgotten tombs, tunnels, and the like."
+                    "The hero carries a portable forge on their back everywhere they go, that they can use to magically forge any swords they find to their arms."
                     "The room descriptions should be palpable and vivid, as if you were there yourself."
                     "To make the game more atmospheric and immersive, room descriptions should use information"
                     "from the surrounding rooms and the monsters within them to create a sense of surroundings."
@@ -523,6 +599,8 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
     )
 
     for neighbor in details.neighbors:
+        print('Neighbor')
+        print(neighbor)
         cursor.execute(
             "UPDATE rooms SET name = ?, description = ? WHERE id = ?",
             (neighbor.name, neighbor.description, neighbor.id),
@@ -533,7 +611,7 @@ def generate_room_details(room_id, neighbor_ids, visited, current_room_monsters,
 
     return details.current_room.name, details.current_room.description
 
-def generate_battle_descriptions(room_id, battle_stats, monster_name, item):
+def generate_battle_descriptions(room_id, battle_stats, monster_name, item=None, use_item=None):
 
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
@@ -548,39 +626,75 @@ def generate_battle_descriptions(room_id, battle_stats, monster_name, item):
     else:
         room_name, room_description = None, None
 
-    player_hp_percent = (battle_stats.player_ending_hp / battle_stats.player_full_hp) * 100
-    monster_hp_percent = battle_stats.monster_ending_hp / battle_stats.monster_full_hp * 100
-    player_attack_percent = battle_stats.player_damage / battle_stats.player_attack * 100
-    monster_attack_percent = battle_stats.monster_damage / battle_stats.monster_attack * 100
+    if use_item:
+        player_hp_percent = (battle_stats.player_ending_hp / battle_stats.player_full_hp) * 100
+        monster_hp_percent = battle_stats.monster_ending_hp / battle_stats.monster_full_hp * 100
 
-    prompt_text = (
-                    f"You are a dungeon master describing a battle move in an immersive text adventure game. "
-                    f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
-                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
-                    f"forgotten tombs, tunnels, and the like."
-                    f"The player is attacking a monster, which is also attacking the player.  Please use the following information to describe the interchange:"
-                    f"The room name is: {room_name}"
-                    f"The room description is: {room_description}"
-                    f"The monster name is: {monster_name}"
-                    f"The player starting hp was: {battle_stats.player_starting_hp}"
-                    f"The player ending hp is: {battle_stats.player_ending_hp}"
-                    f"The player hp percentage is: {player_hp_percent}"
-                    f"The player attack percentage is: {player_attack_percent}"
-                    f"The monster starting hp was: {battle_stats.monster_starting_hp}"
-                    f"The monster ending hp is: {battle_stats.monster_ending_hp}"
-                    f"The monster hp percentage is: {monster_hp_percent}"
-                    f"The monster attack percentage is: {monster_attack_percent}"
-                    f"The monster was defeated: {battle_stats.monster_defeated}"
-                    f"The player was defeated: {battle_stats.player_defeated}"
-                    f"Please keep the description to 200 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
-                    f"The descriptions of the battle should reflect the above player and monster stats."
-                    f"For example, a player_attack_percent of 0 would mean the player missed or was blocked.  A low attack percent from either would mean a weak or glancing blow."
-                    f"Attack percentages refer to the strength of the current attack compared to the maximum possible attack."
-                    f"Hp percentages refer to the current hp compared to the maximum possible hp."
-                    f"Don't offer choices, or mention numbers, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
-                )
+        prompt_text = (
+                        f"You are a dungeon master describing a battle move in an immersive text adventure game. "
+                        f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                        f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                        f"forgotten tombs, tunnels, and the like."
+                        f"The player is using an item.  Please use the following information to describe the interchange:"
+                        f"The item name is: {use_item.name}"
+                        f"The item description is: {use_item.description}"
+                        f"The item effect is: {use_item.item_effect}"
+                        f"The player hp effect is: {use_item.player_hp_effect}"
+                        f"The monster hp effect is: {use_item.monster_hp_effect}"
+                        f"The room name is: {room_name}"
+                        f"The room description is: {room_description}"
+                        f"The monster name is: {monster_name}"
+                        f"The player starting hp was: {battle_stats.player_starting_hp}"
+                        f"The player ending hp is: {battle_stats.player_ending_hp}"
+                        f"The player hp percentage is: {player_hp_percent}"
+                        f"The monster starting hp was: {battle_stats.monster_starting_hp}"
+                        f"The monster ending hp is: {battle_stats.monster_ending_hp}"
+                        f"The monster hp percentage is: {monster_hp_percent}"
+                        f"The monster was defeated: {battle_stats.monster_defeated}"
+                        f"The player was defeated: {battle_stats.player_defeated}"
+                        f"The player has {battle_stats.num_swords} attached to their arms"
+                        f"Please keep the description to 150 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
+                        f"The descriptions of the battle should reflect the above player and monster stats."
+                        f"Hp percentages refer to the current hp compared to the maximum possible hp."
+                        f"Don't offer choices, or mention numbers, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                    )
+
+    else:
+
+        player_hp_percent = (battle_stats.player_ending_hp / battle_stats.player_full_hp) * 100
+        monster_hp_percent = battle_stats.monster_ending_hp / battle_stats.monster_full_hp * 100
+        player_attack_percent = battle_stats.player_damage / battle_stats.player_attack * 100
+        monster_attack_percent = battle_stats.monster_damage / battle_stats.monster_attack * 100
+
+        prompt_text = (
+                        f"You are a dungeon master describing a battle move in an immersive text adventure game. "
+                        f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                        f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                        f"forgotten tombs, tunnels, and the like."
+                        f"The player is attacking a monster, which is also attacking the player.  Please use the following information to describe the interchange:"
+                        f"The room name is: {room_name}"
+                        f"The room description is: {room_description}"
+                        f"The monster name is: {monster_name}"
+                        f"The player starting hp was: {battle_stats.player_starting_hp}"
+                        f"The player ending hp is: {battle_stats.player_ending_hp}"
+                        f"The player hp percentage is: {player_hp_percent}"
+                        f"The player attack percentage is: {player_attack_percent}"
+                        f"The monster starting hp was: {battle_stats.monster_starting_hp}"
+                        f"The monster ending hp is: {battle_stats.monster_ending_hp}"
+                        f"The monster hp percentage is: {monster_hp_percent}"
+                        f"The monster attack percentage is: {monster_attack_percent}"
+                        f"The monster was defeated: {battle_stats.monster_defeated}"
+                        f"The player was defeated: {battle_stats.player_defeated}"
+                        f"The player has {battle_stats.num_swords} attached to their arms"
+                        f"Please keep the description to 150 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
+                        f"The descriptions of the battle should reflect the above player and monster stats."
+                        f"For example, a player_attack_percent of 0 would mean the player missed or was blocked.  A low attack percent from either would mean a weak or glancing blow."
+                        f"Attack percentages refer to the strength of the current attack compared to the maximum possible attack."
+                        f"Hp percentages refer to the current hp compared to the maximum possible hp."
+                        f"Don't offer choices, or mention numbers, focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                    )
     
-    if item.get_item and item.is_item:
+    if item:
         prompt_text = prompt_text + (
             f"After defeating the monster, the player searches the room and finds {item.name}.  The description of the item is: {item.description}"
         )
@@ -608,188 +722,147 @@ def generate_battle_descriptions(room_id, battle_stats, monster_name, item):
     battle_desc = completion.choices[0].message.content
     return battle_desc
 
-# %% Display current room
-text, dirlist, codelist = get_room_description(st.session_state.current_room_id)
+def generate_forging_description(room_id, n_swords, item_name, item_description):
+
+    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+    cursor = conn.cursor()
+
+    # Fetch room name and description for the given room_id
+    cursor.execute("SELECT name, description FROM rooms WHERE id = ?", (room_id,))
+    room_data = cursor.fetchone()
+    conn.close()
+
+    if room_data:
+        room_name, room_description = room_data
+    else:
+        room_name, room_description = None, None
+
+    prompt_text = (
+                    f"You are a dungeon master describing an event in an immersive text adventure game. "
+                    f"For background, the game is called Shadows of Mythlandia, and follows a hero delving deep into the "
+                    f"mysterious vaults of an ancient mountain riddles with caverns, dwarven fortresses,"
+                    f"forgotten tombs, tunnels, and the like."
+                    f"The player is using attaching a sword to their arm using a magical personal back mounted forge.  Please use the following information to describe the event:"
+                    f"The item name is: {item_name}"
+                    f"The item description is: {item_description}"
+                    f"The room name is: {room_name}"
+                    f"The room description is: {room_description}"
+                    f"The player already has this many swords attached to their arms: {n_swords}"
+                    f"Please keep the description to 200 characters or less.  Use the room name and description for context, but don't mention the room by name every time."
+                    f"The descriptions of the forging should reflect the above player and monster stats."
+                    f"Forging swords to their arms increases the hero's attack, and replenishes their health."
+                    f"Focus on the action, with vivid, physical, palpable descriptions of what is happening.  Show don't tell"
+                    f"Make sure to mention that the player is attaching the sword to their arm using the forge."
+                )
+    
+    prompt = {
+        # "model": "gpt-4o-2024-08-06",
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+            "role": "system",
+                "content": "You are a dungeon master describing an event in an immersive text adventure game.  The user will supply the details of the situation, your job is to describe the action given the information.",
+            },
+            {
+                "role": "user",
+                "content": prompt_text,
+            },
+        ],
+        "max_tokens": 200
+    }
+
+    client = get_client()
+
+    # Call OpenAI to generate room details
+    completion = client.chat.completions.create(**prompt)
+    forge_desc = completion.choices[0].message.content
+    return forge_desc
 
 # %% UI Components
+# Display battle stats
+hp_placeholder = st.empty()
+
 text_placeholder = st.empty()  # Main game text display
+text = ""
 
 # Check for monsters in the current room
 conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
 cursor = conn.cursor()
-cursor.execute("SELECT id, name, hp, attack FROM monsters WHERE room_id = ? AND defeated = 0", (st.session_state.current_room_id,))
+cursor.execute("SELECT id, name, full_hp, hp, attack, defeated FROM monsters WHERE room_id = ?", (st.session_state.current_room_id,))
 monster = cursor.fetchone()
 conn.close()
 
-# Define the battle dialog
-@st.dialog("Battle!")
-def battle_dialog(monster_id,room_id):
+# Check if there is an undefeated monster in the current room
+if monster:
+    print(monster)
+    monster_id, monster_name, monster_full_hp, monster_hp, monster_attack, monster_defeated = monster
+    # monster_hp = 1
+
+    if monster_defeated == 0:
+        st.session_state.battle_available = True
+        print('Setting Battle Avaiable to TRUE')
+
+# Check for items in the current room
+conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("SELECT id, name, description, is_claimed FROM items WHERE room_id = ?", (st.session_state.current_room_id,))
+item_info = cursor.fetchone()
+conn.close()
+
+# Check if there is an available item in the current room
+if item_info:
+    print('ITEMS')
+    print(item_info)
+    item_id, item_name, item_desc, is_claimed = item_info
+
+    room_item = SimpleNamespace()
+    room_item.id = item_id
+    room_item.name = item_name
+    room_item.description = item_desc
+    room_item.is_claimed = is_claimed
+        
+    if not is_claimed:
+        st.session_state.item_available = True
+else:
+    room_item = None
+    st.session_state.item_available = False
+
+print(st.session_state.item_available)
+
+# Check if player has any items in their inventory
+conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("SELECT COUNT(*) FROM player_inventory")
+item_count = cursor.fetchone()[0]
+conn.close()
+
+# If player has items, show them in the sidebar
+if item_count > 0:
     conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
     cursor = conn.cursor()
-    cursor.execute("SELECT name, full_hp, hp, attack FROM monsters WHERE id = ?", (monster_id,))
-    monster_info = cursor.fetchone()
-    if monster_info:
-        monster_name, monster_full_hp, monster_hp, monster_attack = monster_info
-    else:
-        monster_name = ""
-        monster_full_hp = 0
-        monster_hp = 0
-        monster_attack = 0
-
-    # Fetch player stats
-    cursor.execute("SELECT hp, attack, defense FROM player_stats WHERE id = 1")
-    player_hp, player_attack, player_defense = cursor.fetchone()
+    cursor.execute("SELECT * FROM player_inventory")
+    items = cursor.fetchall()
     conn.close()
-
-    # Fetch item details
-    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, description FROM items WHERE room_id = ?", (room_id,))
-    item_info = cursor.fetchone()
-    if item_info:
-        item_id, item_name, item_desc = item_info
-        is_item = True
-    else:
-        item_name = ""
-        item_desc = ""
-        item_id = 0
-        is_item = False
-    item = SimpleNamespace()
-    item.name = item_name
-    item.description = item_desc
-    item.get_item = False
-    item.id = item_id
-    item.is_item = is_item
-
-    # Build battle stats
-    battle_stats = SimpleNamespace()
-    battle_stats.player_full_hp = 100
-    battle_stats.player_starting_hp = player_hp
-    battle_stats.player_attack = player_attack
-    battle_stats.monster_full_hp = monster_full_hp
-    battle_stats.monster_starting_hp = monster_hp
-    battle_stats.monster_attack = monster_attack
-
-    st.write(f"### A {monster_name} appears!")
-
-    hp_placeholder = st.empty()
-
-    with hp_placeholder.container():
-        c1, c2 = st.columns(2,border=True)
-        with c1:
-            st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
-        with c2:
-            st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
-
-    # Battle options
-    if monster_hp > 0:
-        col1, col2, col3 = st.columns(3)
-        if col1.button("Attack"):
-            damage = random.randrange(player_attack-monster_attack, player_attack)  # Simple damage formula
-            monster_hp -= damage
-            
-            if monster_hp <= 0:
-                monster_hp = 0
-                with st.spinner('Attacking!'):
-                    battle_stats.monster_damage = 0
-                    battle_stats.player_damage = damage
-                    battle_stats.player_ending_hp = player_hp
-                    battle_stats.monster_ending_hp = 0
-                    battle_stats.monster_defeated = True
-                    battle_stats.player_defeated = False
-                    item.get_item = True
-                    desc = generate_battle_descriptions(room_id,battle_stats,monster_name,item)
-                st.write(desc)
-                st.warning(f"You dealt {damage} damage to the {monster_name}!")
-                st.success(f"You defeated the {monster_name}!")
-                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-                cursor = conn.cursor()
-                cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
-                if item.is_item:
-                    cursor.execute("INSERT INTO player_inventory (id, item_id) VALUES (NULL, ?)", (item.id,))
-                    cursor.execute("UPDATE items SET is_claimed = 1 WHERE id = ?", (item.id,))
-                    st.success(f"You have obtained the item: {item.name}!")
-                    if st.button("Return"):
-                        st.rerun()
-
-                conn.commit()
-                conn.close()
-                
-                with hp_placeholder.container():
-                    c1, c2 = st.columns(2,border=True)
-                    with c1:
-                        st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
-                    with c2:
-                        st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
-            else:
-                # Monster attacks back
-                monster_damage = random.randrange(1,monster_attack-player_defense)
-                player_hp -= monster_damage
-                with st.spinner('Attacking!'):
-                    battle_stats.monster_damage = monster_damage
-                    battle_stats.player_damage = damage
-                    battle_stats.player_ending_hp = player_hp
-                    battle_stats.monster_ending_hp = monster_hp
-                    battle_stats.monster_defeated = False
-                    if player_hp <= 0:
-                        battle_stats.player_defeated = True
-                    else:
-                        battle_stats.player_defeated = False
-                    desc = generate_battle_descriptions(room_id,battle_stats,monster_name,item)
-                st.write(desc)
-                st.warning(f"You dealt {damage} damage to the {monster_name}!")
-                st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
-                with hp_placeholder.container():
-                    c1, c2 = st.columns(2,border=True)
-                    with c1:
-                        st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
-                    with c2:
-                        st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
-                if player_hp <= 0:
-                    st.error("You have been defeated! Game Over.")
-                    st.stop()
-                else:
-                    conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-                    cursor = conn.cursor()
-                    cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
-                    cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
-                    conn.commit()
-                    conn.close()
-
+    st.sidebar.write("HERO INVENTORY")
+    for item in items:
+        item_id = item[1]  # Get the item_id from the player_inventory table
         conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM player_inventory")
-        item_count = cursor.fetchone()[0]
+        cursor.execute("SELECT * FROM items WHERE id = ?", (item_id,))
+        item_data = cursor.fetchone()
         conn.close()
+        if item_data:
+            st.sidebar.write(f"- {item_data[1]}")  # Get the name from the items table
+            st.sidebar.write(f"  {item_data[2]}") 
 
-        if item_count > 0:
-            if col2.button("Use Item"):
-                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
-                cursor = conn.cursor()
-                cursor.execute("SELECT item_id FROM player_inventory ORDER BY RANDOM() LIMIT 1")
-                item_id = cursor.fetchone()[0]
-                cursor.execute("SELECT * FROM items WHERE id = ?", (item_id,))
-                item = cursor.fetchone()
-                item = ItemInfo(*item)
-                conn.close()
+# %% Describe current room
+print('Current state of st.session_state:', st.session_state)
+if not st.session_state.in_battle:
+    text, dirlist, codelist = get_room_description(st.session_state.current_room_id)
 
-    # if col2.button("Defend"):
-    #     st.info("You brace yourself and defend against the attack!")
 
-if monster:
-    monster_id, monster_name, monster_hp, monster_attack = monster
-
-    if monster_hp > 0:
-        # Battle controls
-        col1, col2, col3 = st.columns(3)
-        if col1.button("Fight!"):
-            battle_dialog(monster_id,st.session_state.current_room_id)
-        if col2.button("Flee"):
-            st.session_state.current_room_id = st.session_state.previous_room_id
-            st.rerun()
-    else:
-        st.rerun()
-else:
+# If there is no battle available
+if not st.session_state.battle_available:
     # Direction Buttons
     st.write("### Choose a direction:")
     cols = st.columns(len(dirlist) or 1)
@@ -798,29 +871,373 @@ else:
             st.session_state.previous_room_id = st.session_state.current_room_id
             st.session_state.current_room_id = codelist[i]
             st.rerun()  # Refresh the app with the new room
+
+# If there is a battle available
+else:
+    # Battle controls
+    battle_button_placeholder = st.empty()
+    with battle_button_placeholder.container():
+        col1, col2, col3 = st.columns(3)
+        attack = col1.button("Attack " + monster_name + "!")
+        # Use an item
+        if item_count > 0:
+            use_item = col2.button("Use Item")
+        else:
+            use_item = False
+        flee = col3.button("Flee")
+
+    # Attacking!
+    if attack:
+        st.session_state.in_battle = True
+        
+        # Fetch player stats
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT hp, attack, defense, num_swords FROM player_stats WHERE id = 1")
+        player_hp, player_attack, player_defense, player_num_swords = cursor.fetchone()
+        conn.close()
+
+        # Build battle stats
+        battle_stats = SimpleNamespace()
+        battle_stats.player_full_hp = 100
+        battle_stats.player_starting_hp = player_hp
+        battle_stats.player_attack = player_attack
+        battle_stats.monster_full_hp = monster_full_hp
+        battle_stats.monster_starting_hp = monster_hp
+        battle_stats.monster_attack = monster_attack
+        battle_stats.num_swords = player_num_swords
+
+        # Replace room description
+        text = f"### A {monster_name} appears!\n"
+
+        # Step 1: Player attacks monster
+
+        # Calculate player damage
+        player_damage = random.randrange(player_attack-monster_attack, player_attack)  # Simple damage formula
+
+        # Reduce monster HP by player damage
+        monster_hp -= player_damage
+
+        # Option A: Player kills monster  
+        if monster_hp <= 0:
+            monster_hp = 0
+
+            # Build battle description
+            with st.spinner('Attacking!'):
+                battle_stats.monster_damage = 0
+                battle_stats.player_damage = player_damage
+                battle_stats.player_ending_hp = player_hp
+                battle_stats.monster_ending_hp = 0
+                battle_stats.monster_defeated = True
+                battle_stats.player_defeated = False
+                desc = generate_battle_descriptions(st.session_state.current_room_id,battle_stats,monster_name,room_item)
+            text = text + desc
+            st.warning(f"You dealt {player_damage} damage to the {monster_name}!")
+            st.success(f"You defeated the {monster_name}!")
+
+            # Set monster as defeated
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
+            conn.commit()
+            conn.close()
+
+            st.session_state.battle_available = False
+            st.session_state.in_battle = False
+            
+            # Claim the treasure
+            print(st.session_state)
+            if st.session_state.item_available:
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO player_inventory (id, item_id) VALUES (NULL, ?)", (room_item.id,))
+                cursor.execute("UPDATE items SET is_claimed = 1 WHERE id = ?", (room_item.id,))
+                conn.commit()
+                conn.close()
+                st.success(f"You have obtained the item: {room_item.name}!")
+                battle_button_placeholder.empty()
+                if st.button("Continue",use_container_width=True):
+                    st.rerun()
+                    text = ""
+            else:
+                if st.button("Continue",use_container_width=True):
+                    st.rerun()
+                    text = ""
+            
+            # Show battle stats
+            with hp_placeholder.container():
+                c1, c2 = st.columns(2,border=True)
+                with c1:
+                    st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                with c2:
+                    st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+
+        # Option B: Monster attacks back
+        else:
+            monster_damage = random.randrange(0,max(monster_attack-player_defense,1))  # Simple damage formula
+            player_hp -= monster_damage
+
+            # Build battle description
+            with st.spinner('Attacking!'):
+                battle_stats.monster_damage = monster_damage
+                battle_stats.player_damage = player_damage
+                battle_stats.player_ending_hp = player_hp
+                battle_stats.monster_ending_hp = monster_hp
+                battle_stats.monster_defeated = False
+                if player_hp <= 0:
+                    battle_stats.player_defeated = True
+                else:
+                    battle_stats.player_defeated = False
+                desc = generate_battle_descriptions(st.session_state.current_room_id,battle_stats,monster_name,None)
+            text = text + desc
+            st.warning(f"You dealt {player_damage} damage to the {monster_name}!")
+            st.error(f"The {monster_name} attacked you for {monster_damage} damage!")
+
+            # Show battle stats
+            with hp_placeholder.container():
+                c1, c2 = st.columns(2,border=True)
+                with c1:
+                    st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                with c2:
+                    st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+
+            # Check if player is dead
+            if player_hp <= 0:
+                # If so, end the game
+                st.error("You have been defeated! Game Over.")
+                st.stop()
+            else:
+                # Otherwise, update the monster and player HP
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
+                cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
+                conn.commit()
+                conn.close()
+    
+    if use_item:
+        # Replace room description
+        text = f"### A {monster_name} appears!\n"
+
+        st.session_state.in_battle = True
+        
+        # Fetch player stats
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT hp, attack, defense FROM player_stats WHERE id = 1")
+        player_hp, player_attack, player_defense = cursor.fetchone()
+        conn.close()
+
+        # Build battle stats
+        battle_stats = SimpleNamespace()
+        battle_stats.player_full_hp = 100
+        battle_stats.player_starting_hp = player_hp
+        battle_stats.monster_full_hp = monster_full_hp
+        battle_stats.monster_starting_hp = monster_hp
+
+        # Select random item
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT item_id FROM player_inventory ORDER BY RANDOM() LIMIT 1")
+        item_id = cursor.fetchone()[0]
+        cursor.execute("SELECT name, description FROM items WHERE id = ?", (item_id,))
+        item = cursor.fetchone()
+        item_name, item_description = item
+        conn.close()
+        text = text + "\n" + item_name + "\n" + item_description
+        
+        # Remove used item from player inventory
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM player_inventory WHERE item_id = ?", (item_id,))
+        conn.commit()
+        conn.close()
+        
+        # Get item effect
+        item_effect = describe_item_effect(st.session_state.current_room_id, battle_stats, monster_name, item_name, item_description)
+        # text = text + "\n" + str(item_effect.description)
+        # text = text + "\n" + str(item_effect.player_hp_effect)
+        # text = text + "\n" + str(item_effect.monster_hp_effect)
+
+        # Pack item effect
+        used_item = SimpleNamespace()
+        used_item.name = item_name
+        used_item.description = item_description
+        used_item.item_effect = item_effect.description
+        used_item.player_hp_effect = item_effect.player_hp_effect
+        used_item.monster_hp_effect = item_effect.monster_hp_effect
+
+        # Build battle stats
+        battle_stats = SimpleNamespace()
+        battle_stats.player_full_hp = 100
+        battle_stats.player_starting_hp = player_hp
+        battle_stats.monster_full_hp = monster_full_hp
+        battle_stats.monster_starting_hp = monster_hp
+
+        # Replace room description
+        text = f"### A {monster_name} appears!\n"
+
+        # Step 1: Player attacks monster
+
+        # Reduce monster HP by player damage
+        monster_hp += used_item.monster_hp_effect
+
+        battle_stats.player_damage = 0
+        battle_stats.monster_damage = 0
+
+        if used_item.player_hp_effect < 0:
+            battle_stats.monster_damage = used_item.player_hp_effect
+        if used_item.monster_hp_effect < 0:
+            battle_stats.player_damage = used_item.monster_hp_effect
+
+        # Option A: Player kills monster  
+        if monster_hp <= 0:
+            monster_hp = 0
+
+            # Build battle description
+            with st.spinner('Attacking!'):
+                battle_stats.player_ending_hp = player_hp + used_item.player_hp_effect
+                battle_stats.monster_ending_hp = 0
+                battle_stats.monster_defeated = True
+                battle_stats.player_defeated = False
+                desc = generate_battle_descriptions(st.session_state.current_room_id,battle_stats,monster_name,room_item,used_item)
+            text = text + desc
+            st.success(f"You defeated the {monster_name}!")
+            if used_item.player_hp_effect > 0:
+                st.warning(f"You healed yourself for {used_item.player_hp_effect} HP!")
+            if used_item.player_hp_effect < 0:
+                st.warning(f"You took {used_item.player_hp_effect} damage!")
+            if used_item.monster_hp_effect > 0:
+                st.warning(f"The {monster_name} healed for {used_item.monster_hp_effect} HP!")
+            if used_item.monster_hp_effect < 0:
+                st.warning(f"The {monster_name} took {used_item.monster_hp_effect} damage!")
+
+            # Set monster as defeated
+            conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE monsters SET defeated = 1 WHERE id = ?", (monster_id,))
+            conn.commit()
+            conn.close()
+
+            st.session_state.battle_available = False
+            st.session_state.in_battle = False
+            
+            # Claim the treasure
+            if st.session_state.item_available:
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO player_inventory (id, item_id) VALUES (NULL, ?)", (room_item.id,))
+                cursor.execute("UPDATE items SET is_claimed = 1 WHERE id = ?", (room_item.id,))
+                conn.commit()
+                conn.close()
+                st.success(f"You have obtained the item: {room_item.name}!")
+                battle_button_placeholder.empty()
+                if st.button("Continue",use_container_width=True):
+                    st.rerun()
+                    text = ""
+            else:
+                if st.button("Continue",use_container_width=True):
+                    st.rerun()
+                    text = ""
+            
+            # Show battle stats
+            with hp_placeholder.container():
+                c1, c2 = st.columns(2,border=True)
+                with c1:
+                    st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                with c2:
+                    st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+
+        # Option B: Monster attacks back
+        else:
+            monster_damage = random.randrange(0,max(monster_attack-player_defense,1))  # Simple damage formula
+            player_hp -= monster_damage
+
+            # Build battle description
+            with st.spinner('Attacking!'):
+                battle_stats.player_ending_hp = player_hp + used_item.player_hp_effect
+                battle_stats.monster_ending_hp = monster_hp + used_item.monster_hp_effect
+                battle_stats.monster_defeated = False
+                if player_hp <= 0:
+                    battle_stats.player_defeated = True
+                else:
+                    battle_stats.player_defeated = False
+                desc = generate_battle_descriptions(st.session_state.current_room_id,battle_stats,monster_name,None,used_item)
+            text = text + desc
+            if used_item.player_hp_effect > 0:
+                st.success(f"You healed yourself for {used_item.player_hp_effect} HP!")
+            if used_item.player_hp_effect < 0:
+                st.error(f"You took {used_item.player_hp_effect} damage!")
+            if used_item.monster_hp_effect > 0:
+                st.error(f"The {monster_name} healed for {used_item.monster_hp_effect} HP!")
+            if used_item.monster_hp_effect < 0:
+                st.warning(f"The {monster_name} took {used_item.monster_hp_effect} damage!")
+
+            # Show battle stats
+            with hp_placeholder.container():
+                c1, c2 = st.columns(2,border=True)
+                with c1:
+                    st.write(f"**Monster HP:** {monster_hp} | **Attack:** {monster_attack}")
+                with c2:
+                    st.write(f"**Hero HP:** {player_hp} | **Attack:** {player_attack}")
+
+            # Check if player is dead
+            if player_hp <= 0:
+                # If so, end the game
+                st.error("You have been defeated! Game Over.")
+                st.stop()
+            else:
+                # Otherwise, update the monster and player HP
+                conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+                cursor = conn.cursor()
+                cursor.execute("UPDATE monsters SET hp = ? WHERE id = ?", (monster_hp, monster_id))
+                cursor.execute("UPDATE player_stats SET hp = ? WHERE id = 1", (player_hp,))
+                conn.commit()
+                conn.close()
+
+    # Run away!
+    if flee:
+        st.session_state.current_room_id = st.session_state.previous_room_id
+        st.rerun()
+
+# Check to see if the player has any swords in their inventory
+conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute("SELECT COUNT(*) FROM player_inventory WHERE item_id IN (SELECT id FROM items WHERE is_sword)")
+sword_count = cursor.fetchone()[0]
+conn.close()
+
+if sword_count > 0:
     if st.button("FORGE", type="primary",key='forge', use_container_width=True):
         st.write('FORGING')
+        conn = sqlite3.connect("adventure_game.db", check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT item_id FROM player_inventory WHERE item_id IN (SELECT id FROM items WHERE is_sword) LIMIT 1")
+        item_id = cursor.fetchone()[0]
+        cursor.execute("SELECT name, description FROM items WHERE id = ?", (item_id,))
+        item_name, item_description = cursor.fetchone()
+        cursor.execute("SELECT num_swords FROM player_stats WHERE id = 1")
+        n_swords = cursor.fetchone()[0]
+        cursor.execute("SELECT name, description FROM rooms WHERE id = ?", (st.session_state.current_room_id,))
+        room_data = cursor.fetchone()
+        cursor.execute("DELETE FROM player_inventory WHERE item_id = ?", (item_id,))
+        cursor.execute("UPDATE player_stats SET num_swords = ?, attack = attack + 1, hp = 100 WHERE id = 1", (n_swords + 1,))
+        conn.commit()
+        conn.close()
 
-# Action Buttons
-# st.write("### Actions:")
-# col1, col2, col3 = st.columns(3)
+        room_name, room_description = room_data
 
-# with col1:
-#     if st.button("Attack!"):
-#         text += "\nOw, what was that for?"
-# with col2:
-#     if st.button("Defend!"):
-#         text += "\nBlocked!"
-# with col3:
-#     if st.button("Balloons!"):
-#         st.balloons()
-#         text += "\nHooray!"
+        text = ""
+        text = f"---{room_name}---\n"
+        text = text + generate_forging_description(st.session_state.current_room_id, n_swords, item_name, item_description)
 
 # Update text area
 with text_placeholder:
     st.text_area("text", value=text, height=170, disabled=True, label_visibility="collapsed")
 
-# @st.dialog("Dungeon Map")
+
+
+#%% Dungeon Map
 def build_dungeon_map():
     data = fetch_dungeon_data()
     G, pos = compute_dungeon_layout(data)
@@ -832,7 +1249,6 @@ def build_dungeon_map():
     fig.update_layout(showlegend=False)
     st.plotly_chart(fig, config = {'displayModeBar': False})
 
-# if st.button("Dungeon Map"):
 with st.container(border=True):
     build_dungeon_map()
 
